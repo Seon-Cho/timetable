@@ -97,6 +97,16 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
 .cat-class{background:var(--c-class)} .cat-fixed{background:var(--c-fixed)} .cat-special{background:var(--c-special)}
 .cat-free{background:var(--c-free)} .cat-sleep{background:var(--c-sleep)} .cat-study{background:var(--c-study)}
 .blk.cat-sleep{color:var(--muted)}
+.tt td.slot{cursor:pointer;position:relative}
+.tt tr td.join-down{border-bottom-color:var(--c-study)}
+.tt tr td.join-up{border-top-color:var(--c-study)}
+.tt td.slot:hover,.tt td.slot:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tt td.slot:hover::after,.tt td.slot:focus-visible::after{content:"빼기";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--accent)}
+.tt td.excl{cursor:pointer;position:relative}
+.tt td.excl:hover,.tt td.excl:focus-visible{outline:2px dashed var(--line-strong);outline-offset:-3px}
+.tt td.excl:hover::after,.tt td.excl:focus-visible::after{content:"되돌리기";font-size:11px;color:var(--muted)}
+.tip{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px}
+.tip .sw{display:inline-block;vertical-align:-2px;margin-right:4px}
 @media (max-width:560px){ h1{font-size:22px} input[type=time]{width:108px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -130,6 +140,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <div class="summary" id="summary"></div>
     <div class="legend" id="legend"></div>
     <ul class="warns" id="warns" hidden></ul>
+    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸을 누르면 30분씩 빠지고, 그 시간은 다음 우선순위의 빈 시간으로 옮겨져요. 뺀 칸을 다시 누르면 되돌려요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>뺀 칸 모두 되돌리기</button></div>
     <div class="tablebox"><table class="tt" id="tt"></table></div>
   </section>
 </div>
@@ -321,12 +332,14 @@ function build(){
   // 순공 자동 배치
   const goalSlots=Math.round((state.goal||0)*2);
   const isMeal=m=>state.keepMeals&&((m>=720&&m<780)||(m>=1080&&m<1140));
+  const ex=new Set(state.excluded||[]);
   const tiers=[[],[],[],[]];
   for(let d=0;d<7;d++){
     const q=[[],[],[],[]];
     for(let r=0;r<N;r++){
       const m=gStart+r*30;
       if(grid[d][r]||m<wake[d]||m>=bed[d]||isMeal(m)) continue;
+      if(ex.has(d+'-'+m)){ grid[d][r]={cat:'excl'}; continue; }
       const day=m>=540&&m<1080;
       const t=(d<5?0:2)+(day?0:1);
       q[t].push(r);
@@ -365,16 +378,24 @@ function renderResult(res){
     `<span class="stat">자유 <b>${tot.free}</b>시간</span>`;
   $('legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<span><i class="sw" style="background:var(${v.color})"></i>${v.label}</span>`).join('');
   const w=$('warns'); w.hidden=!warns.length; w.innerHTML=warns.map(t=>`<li>${esc(t)}</li>`).join('');
+  const nEx=(state.excluded||[]).length;
+  $('btn-reset-ex').hidden=!nEx; $('btn-reset-ex').textContent=`뺀 칸 ${nEx}개 모두 되돌리기`;
 
-  // 블록(연속 칸 합치기)
+  // 블록(연속 칸 합치기). 순공은 30분씩 따로 눌러야 하므로 칸을 나눠 두고 테두리만 이어 보이게 함
   const span=[...Array(7)].map(()=>Array(N).fill(0)); // >0: 블록 시작 rowspan, -1: 가려짐, 0: 빈칸
+  const run=[...Array(7)].map(()=>Array(N).fill(null)); // 순공 칸의 이어진 구간 정보
   for(let d=0;d<7;d++){
     let r=0;
     while(r<N){
       const c=grid[d][r];
-      if(!c){ r++; continue; }
+      if(!c||c.cat==='excl'){ r++; continue; }
       let k=r+1; while(k<N&&grid[d][k]&&grid[d][k].cat===c.cat&&grid[d][k].name===c.name) k++;
-      span[d][r]=k-r; for(let j=r+1;j<k;j++) span[d][j]=-1; r=k;
+      if(c.cat==='study'){
+        for(let j=r;j<k;j++){ span[d][j]=1; run[d][j]={i:j-r,len:k-r,a:gStart+r*30,b:gStart+k*30}; }
+      } else {
+        span[d][r]=k-r; for(let j=r+1;j<k;j++) span[d][j]=-1;
+      }
+      r=k;
     }
   }
   let h='<colgroup><col style="width:64px">'+DAYS.map(()=>'<col>').join('')+'</colgroup>';
@@ -383,10 +404,21 @@ function renderResult(res){
     const m=gStart+r*30, hour=m%60===0;
     h+=`<tr class="${hour?'hour':''}"><th class="time ${hour?'':'half'}">${fmt(m)}</th>`;
     for(let d=0;d<7;d++){
-      const sp=span[d][r];
+      const sp=span[d][r], c=grid[d][r];
       if(sp===-1) continue;
+      if(c&&c.cat==='excl'){ h+=`<td class="excl" data-d="${d}" data-m="${m}" tabindex="0" role="button" title="${DAYS[d]} ${fmt(m)} 순공 되돌리기"></td>`; continue; }
       if(sp===0){ h+='<td></td>'; continue; }
-      const c=grid[d][r];
+      if(c.cat==='study'){
+        const R=run[d][r];
+        const cls=['blk','cat-study','slot'];
+        if(R.i>0) cls.push('join-up');
+        if(R.i<R.len-1) cls.push('join-down');
+        let inner='';
+        if(R.i===0) inner=`<span class="n">순공</span>`;
+        else if(R.i===1) inner=`<span class="t">${fmt(R.a)}–${fmt(R.b)}</span>`;
+        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" tabindex="0" role="button" title="${DAYS[d]} ${fmt(m)}–${fmt(m+30)} 순공 빼기">${inner}</td>`;
+        continue;
+      }
       const a=m, b=m+sp*30;
       const t=sp>=2?`<span class="t">${fmt(a)}–${fmt(b)}</span>`:'';
       h+=`<td rowspan="${sp}" class="blk cat-${c.cat}" title="${esc(c.name)} ${fmt(a)}–${fmt(b)}"><span class="n">${esc(c.name)}</span>${t}</td>`;
@@ -395,6 +427,24 @@ function renderResult(res){
   }
   $('tt').innerHTML=h+'</tbody>';
 }
+
+/* 순공 칸 빼기 / 되돌리기 */
+function toggleSlot(td){
+  const key=td.dataset.d+'-'+td.dataset.m;
+  state.excluded=state.excluded||[];
+  const i=state.excluded.indexOf(key);
+  if(td.classList.contains('slot')&&i<0) state.excluded.push(key);
+  else if(td.classList.contains('excl')&&i>=0) state.excluded.splice(i,1);
+  else return;
+  save();
+  const sx=window.scrollX, sy=window.scrollY, box=document.querySelector('.tablebox'), bx=box.scrollLeft;
+  renderResult(build());
+  window.scrollTo(sx,sy); box.scrollLeft=bx;
+  const again=document.querySelector(`#tt td[data-d="${td.dataset.d}"][data-m="${td.dataset.m}"]`); again&&again.focus({preventScroll:true});
+}
+$('tt').addEventListener('click',e=>{ const td=e.target.closest('td.slot,td.excl'); if(td) toggleSlot(td); });
+$('tt').addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ') return; const td=e.target.closest('td.slot,td.excl'); if(td){ e.preventDefault(); toggleSlot(td); } });
+$('btn-reset-ex').onclick=()=>{ state.excluded=[]; save(); renderResult(build()); };
 
 /* ---------- 화면 전환 ---------- */
 function show(page){
