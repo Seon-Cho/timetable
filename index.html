@@ -106,7 +106,11 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
 .tt tr td.st-fail.join-down{border-bottom-color:var(--c-fail)} .tt tr td.st-fail.join-up{border-top-color:var(--c-fail)}
 .tt td.slot:hover,.tt td.slot:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .tt td.fslot{cursor:grab;position:relative;touch-action:none;user-select:none;-webkit-user-select:none}
-.tt tr td.fslot.join-down{border-bottom-color:var(--c-free)} .tt tr td.fslot.join-up{border-top-color:var(--c-free)}
+.tt tr td.fslot.cat-free.join-down{border-bottom-color:var(--c-free)} .tt tr td.fslot.cat-free.join-up{border-top-color:var(--c-free)}
+.tt tr td.fslot.cat-fixed.join-down{border-bottom-color:var(--c-fixed)} .tt tr td.fslot.cat-fixed.join-up{border-top-color:var(--c-fixed)}
+.meals{display:flex;flex-direction:column;gap:6px}
+.meal-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.meal-lbl{font-size:13px;color:var(--muted);width:48px}
 .tt td.fslot:hover{outline:2px solid var(--accent);outline-offset:-2px}
 .tt td.fslot.dragging{opacity:.35}
 .row-tools{display:flex;gap:2px;align-items:flex-start}
@@ -178,7 +182,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <div class="summary" id="summary"></div>
     <div class="legend" id="legend"></div>
     <ul class="warns" id="warns" hidden></ul>
-    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸을 누르면 초록색(완료)이 되고, 다시 누르면 취소돼요. 빨간 선(지금 시각)이 지나도록 완료하지 않은 칸은 빨간색(실패)이 돼요. 순공과 자유시간 칸은 끌어서 빈칸(식사 시간 포함)으로 옮길 수 있고, 실패 칸을 미래로 옮기면 다시 계획(노란색)이 돼요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>옮긴 칸 모두 되돌리기</button></div>
+    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸을 누르면 초록색(완료)이 되고, 다시 누르면 취소돼요. 빨간 선(지금 시각)이 지나도록 완료하지 않은 칸은 빨간색(실패)이 돼요. 순공, 자유시간, 고정 일정(등교 등) 칸은 끌어서 빈칸(식사 시간 포함)으로 옮길 수 있고, 실패 칸을 미래로 옮기면 다시 계획(노란색)이 돼요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>옮긴 칸 모두 되돌리기</button></div>
     <div class="tablebox"><table class="tt" id="tt"></table></div>
   </section>
 </div>
@@ -226,13 +230,22 @@ const SAMPLE={
   ],
   sleep:{wdWake:'06:30',wdBed:'23:30',weWake:'08:00',weBed:'00:00'},
   goal:25,
-  keepMeals:true
+  keepMeals:true,
+  meals:[{start:'12:00',end:'13:00'},{start:'18:00',end:'19:00'}]
 };
-const EMPTY=()=>({classes:[],fixed:[],special:[],free:[],sleep:{wdWake:'07:00',wdBed:'23:30',weWake:'08:00',weBed:'00:00'},goal:20,keepMeals:true});
+const EMPTY=()=>({classes:[],fixed:[],special:[],free:[],sleep:{wdWake:'07:00',wdBed:'23:30',weWake:'08:00',weBed:'00:00'},goal:20,keepMeals:true,meals:[{start:'12:00',end:'13:00'},{start:'18:00',end:'19:00'}]});
 
 let state, isSample=false;
 try{ const s=localStorage.getItem(STORE); if(s){ state=JSON.parse(s); } }catch(e){}
 if(!state){ state=JSON.parse(JSON.stringify(SAMPLE)); isSample=true; }
+// 예전 버전 데이터 옮기기
+if(!state.meals) state.meals=[{start:'12:00',end:'13:00'},{start:'18:00',end:'19:00'}];
+if(state.freeEx||state.freePins){
+  state.moveEx=(state.moveEx||[]).concat((state.freeEx||[]).map(k=>'free:'+k));
+  state.movePins=state.movePins||{};
+  Object.entries(state.freePins||{}).forEach(([k,n])=>{ state.movePins[k]={cat:'free',name:n}; });
+  delete state.freeEx; delete state.freePins;
+}
 function save(){ try{ localStorage.setItem(STORE,JSON.stringify(state)); }catch(e){} }
 
 const $=id=>document.getElementById(id);
@@ -246,7 +259,7 @@ const LISTS=[
   {key:'special',cat:'special',n:3,title:'이번 주 특별 일정',desc:'이번 주에만 있는 약속 (병원, 식사 약속 등)',ph:'약속 이름 (예: 병원)',addLabel:'약속 추가'},
   {key:'free',cat:'free',n:4,title:'자유시간',desc:'쉬고 싶은 요일과 시간대. 순공이 배치되지 않고, 시간표에서 끌어서 옮길 수 있어요.',ph:'이름 (기본: 자유시간)',addLabel:'자유시간 추가'},
   {key:'classes',cat:'class',n:5,title:'수업',desc:'과목명과 요일, 수업 시작·종료 시간',ph:'과목명 (예: 도시계획론)',addLabel:'수업 추가'},
-  {key:'fixed',cat:'fixed',n:6,title:'고정 일정',desc:'매주 반복되는 일정 (운동, 통학, 출퇴근 등)',ph:'일정 이름 (예: 운동)',addLabel:'고정 일정 추가'}
+  {key:'fixed',cat:'fixed',n:6,title:'고정 일정',desc:'매주 반복되는 일정 (운동, 통학, 출퇴근 등). 시간표에서 끌어서 옮길 수 있어요.',ph:'일정 이름 (예: 운동)',addLabel:'고정 일정 추가'}
 ];
 
 function renderInput(focusSel){
@@ -255,10 +268,22 @@ function renderInput(focusSel){
   const s1=document.createElement('div'); s1.className='sec';
   s1.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-study)">1</span><div><h2>주간 순공 목표</h2><p>비어 있는 깨어 있는 시간에 자동 배치해요. 주중·낮(9–18시)을 먼저 채우고, 요일마다 고르게 나눠요.</p></div></div>
   <label class="field">한 주 목표 (시간)<input type="number" id="goal" min="0" max="120" step="0.5" value="${state.goal}"></label>
-  <label class="check"><input type="checkbox" id="keepMeals" ${state.keepMeals?'checked':''}> 식사 시간(12:00–13:00, 18:00–19:00)은 비워두기</label>`;
+  <label class="check"><input type="checkbox" id="keepMeals" ${state.keepMeals?'checked':''}> 식사 시간에는 순공을 자동 배치하지 않기</label>
+  <div class="meals" id="meals"></div>
+  <button class="btn add" type="button" id="meal-add">+ 식사 시간 추가</button>`;
   box.appendChild(s1);
   $('goal').oninput=e=>{ state.goal=parseFloat(e.target.value)||0; save(); };
   $('keepMeals').onchange=e=>{ state.keepMeals=e.target.checked; save(); };
+  const mbox=$('meals');
+  state.meals.forEach((ml,i)=>{
+    const row=document.createElement('div'); row.className='meal-row';
+    row.innerHTML=`<span class="meal-lbl">식사 ${i+1}</span><input type="time" step="1800" id="meal-${i}-start" value="${ml.start||''}" aria-label="식사 ${i+1} 시작"><span class="tilde">~</span><input type="time" step="1800" id="meal-${i}-end" value="${ml.end||''}" aria-label="식사 ${i+1} 끝"><button type="button" class="tool del" id="meal-${i}-del" aria-label="식사 ${i+1} 삭제" title="삭제">✕</button>`;
+    row.querySelector(`#meal-${i}-start`).oninput=e=>{ ml.start=e.target.value; save(); };
+    row.querySelector(`#meal-${i}-end`).oninput=e=>{ ml.end=e.target.value; save(); };
+    row.querySelector(`#meal-${i}-del`).onclick=()=>{ state.meals.splice(i,1); save(); renderInput('#meal-add'); };
+    mbox.appendChild(row);
+  });
+  $('meal-add').onclick=()=>{ state.meals.push({start:'',end:''}); save(); renderInput(`#meal-${state.meals.length-1}-start`); };
   // 2. 기상/취침
   const s2=document.createElement('div'); s2.className='sec';
   s2.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-sleep)">2</span><div><h2>기상·취침 시간</h2><p>주중(월–금)과 주말(토–일)을 따로 정해요. 자정을 넘기면 00:30처럼 입력하세요.</p></div></div>
@@ -370,10 +395,11 @@ function build(){
   // 취침
   for(let d=0;d<7;d++) for(let r=0;r<N;r++){ const m=gStart+r*30; if(m<wake[d]||m>=bed[d]) grid[d][r]={cat:'sleep',name:'취침',pri:9}; }
   // 일정 (우선순위 높은 것부터)
-  const fex=new Set(state.freeEx||[]);
+  const MOV={free:1,fixed:1};
+  const mex=new Set(state.moveEx||[]);
   events.sort((x,y)=>x.pri-y.pri).forEach(e=>{
     for(let m=e.a;m<e.b;m+=30){
-      if(e.cat==='free'&&fex.has(e.day+'-'+m)) continue; // 다른 곳으로 옮긴 자유시간 칸
+      if(MOV[e.cat]&&mex.has(e.cat+':'+e.day+'-'+m)) continue; // 다른 곳으로 옮긴 칸
       const r=(m-gStart)/30, cur=grid[e.day][r];
       if(!cur||cur.cat==='sleep'){
         if(cur&&cur.cat==='sleep') addWarn(warns,`${DAYS[e.day]} ${e.name}: 취침 시간과 겹쳐요.`);
@@ -383,12 +409,12 @@ function build(){
       }
     }
   });
-  // 옮겨 둔 자유시간 칸
-  Object.entries(state.freePins||{}).forEach(([k,name])=>{
+  // 옮겨 둔 자유시간·고정 일정 칸
+  Object.entries(state.movePins||{}).forEach(([k,{cat,name}])=>{
     const [d,m]=k.split('-').map(Number), r=(m-gStart)/30;
     if(!(r>=0&&r<N&&Number.isInteger(r))) return;
-    if(!grid[d][r]) grid[d][r]={cat:'free',name,pri:3,pinned:true};
-    else if(!(grid[d][r].cat==='free'&&grid[d][r].name===name)) addWarn(warns,`${DAYS[d]} ${fmt(m)}에 옮겨 둔 ${name}이(가) ‘${grid[d][r].name}’과 겹쳐서 빠졌어요.`);
+    if(!grid[d][r]) grid[d][r]={cat,name,pri:PRI[cat],pinned:true};
+    else if(!(grid[d][r].cat===cat&&grid[d][r].name===name)) addWarn(warns,`${DAYS[d]} ${fmt(m)}에 옮겨 둔 ${name}이(가) ‘${grid[d][r].name}’과 겹쳐서 빠졌어요.`);
   });
   // 순공 자동 배치
   const goalSlots=Math.round((state.goal||0)*2);
@@ -400,7 +426,8 @@ function build(){
     if(!grid[d][r]){ grid[d][r]={cat:'study',name:'순공',pri:8,pinned:true}; placed++; }
     else addWarn(warns,`${DAYS[d]} ${fmt(m)}에 옮겨 둔 순공이 ‘${grid[d][r].name}’과 겹쳐서 빠졌어요.`);
   });
-  const isMeal=m=>state.keepMeals&&((m>=720&&m<780)||(m>=1080&&m<1140));
+  const meals=(state.meals||[]).filter(x=>x.start&&x.end).map(x=>[floor30(toMin(x.start)),ceil30(toMin(x.end))]).filter(([a,b])=>b>a);
+  const isMeal=m=>state.keepMeals&&meals.some(([a,b])=>m>=a&&m<b);
   const ex=new Set(state.excluded||[]);
   const tiers=[[],[],[],[]];
   for(let d=0;d<7;d++){
@@ -456,7 +483,7 @@ function renderResult(res){
   $('legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<span><i class="sw" style="background:var(${v.color})"></i>${v.label}</span>`).join('')+
     `<span><i class="sw" style="background:var(--c-done)"></i>순공 완료</span><span><i class="sw" style="background:var(--c-fail)"></i>순공 실패</span>`;
   const w=$('warns'); w.hidden=!warns.length; w.innerHTML=warns.map(t=>`<li>${esc(t)}</li>`).join('');
-  const changed=(state.excluded||[]).length+(state.pinned||[]).length+(state.freeEx||[]).length+Object.keys(state.freePins||{}).length;
+  const changed=(state.excluded||[]).length+(state.pinned||[]).length+(state.moveEx||[]).length+Object.keys(state.movePins||{}).length;
   $('btn-reset-ex').hidden=!changed;
 
   // 순공 칸 상태 계산
@@ -500,9 +527,9 @@ function renderResult(res){
       const c=grid[d][r];
       if(!c||c.cat==='excl'){ r++; continue; }
       let k=r+1;
-      if(c.cat==='study'||c.cat==='free'){
+      if(c.cat==='study'||c.cat==='free'||c.cat==='fixed'){
         if(c.cat==='study') while(k<N&&grid[d][k]&&grid[d][k].cat==='study'&&st[d][k]===st[d][r]) k++;
-        else while(k<N&&grid[d][k]&&grid[d][k].cat==='free'&&grid[d][k].name===c.name) k++;
+        else while(k<N&&grid[d][k]&&grid[d][k].cat===c.cat&&grid[d][k].name===c.name) k++;
         for(let j=r;j<k;j++){ span[d][j]=1; run[d][j]={i:j-r,len:k-r,a:gStart+r*30,b:gStart+k*30}; }
       } else {
         while(k<N&&grid[d][k]&&grid[d][k].cat===c.cat&&grid[d][k].name===c.name) k++;
@@ -534,15 +561,15 @@ function renderResult(res){
         h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" tabindex="0" role="button" aria-pressed="${s==='done'}" title="${DAYS[d]} ${fmt(m)}–${fmt(m+30)} · ${TIP[s]}">${inner}</td>`;
         continue;
       }
-      if(c.cat==='free'){
+      if(c.cat==='free'||c.cat==='fixed'){
         const R=run[d][r];
-        const cls=['blk','cat-free','fslot'];
+        const cls=['blk','cat-'+c.cat,'fslot'];
         if(R.i>0) cls.push('join-up');
         if(R.i<R.len-1) cls.push('join-down');
         let inner='';
         if(R.i===0) inner=`<span class="n">${esc(c.name)}</span>`;
         else if(R.i===1) inner=`<span class="t">${fmt(R.a)}–${fmt(R.b)}</span>`;
-        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" data-n="${esc(c.name)}" title="${esc(c.name)} ${DAYS[d]} ${fmt(m)}–${fmt(m+30)} · 끌어서 옮기기">${inner}</td>`;
+        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" data-c="${c.cat}" data-n="${esc(c.name)}" title="${esc(c.name)} ${DAYS[d]} ${fmt(m)}–${fmt(m+30)} · 끌어서 옮기기">${inner}</td>`;
         continue;
       }
       const a=m, b=m+sp*30;
@@ -610,11 +637,11 @@ function toggleSlot(td){
 function moveSlot(src,dst){
   const ks=src.dataset.d+'-'+src.dataset.m, kd=dst.dataset.d+'-'+dst.dataset.m;
   if(src.classList.contains('fslot')){
-    state.freePins=state.freePins||{};
-    const name=src.dataset.n||'자유시간';
-    if(state.freePins[ks]) delete state.freePins[ks]; else add('freeEx',ks);
+    state.movePins=state.movePins||{};
+    const cat=src.dataset.c||'free', name=src.dataset.n||'자유시간';
+    if(state.movePins[ks]) delete state.movePins[ks]; else add('moveEx',cat+':'+ks);
     add('excluded',ks); // 비운 자리는 빈칸으로 둠
-    del('excluded',kd); state.freePins[kd]=name;
+    del('excluded',kd); state.movePins[kd]={cat,name};
     save(); rerender(); return;
   }
   if(arr('pinned').includes(ks)) del('pinned',ks); else add('excluded',ks);
@@ -666,7 +693,7 @@ $('tt').addEventListener('keydown',e=>{
   if(e.key!=='Enter'&&e.key!==' ') return;
   const td=e.target.closest('td.slot,td.excl'); if(td){ e.preventDefault(); toggleSlot(td); }
 });
-$('btn-reset-ex').onclick=()=>{ state.excluded=[]; state.pinned=[]; state.freeEx=[]; state.freePins={}; save(); rerender(); };
+$('btn-reset-ex').onclick=()=>{ state.excluded=[]; state.pinned=[]; state.moveEx=[]; state.movePins={}; save(); rerender(); };
 
 /* ---------- 화면 전환 ---------- */
 function show(page){
