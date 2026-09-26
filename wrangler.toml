@@ -1,0 +1,8 @@
+name = "timetable"
+pages_build_output_dir = "./public"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "timetable-db"
+database_id = "7515e69b-9bf7-490c-bb04-56ceb350befc"
