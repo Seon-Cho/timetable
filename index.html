@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>주간 시간표 플래너</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#1C2430; --muted:#5E6878; --line:#D5DBE3; --line-strong:#9AA4B2;
+  --accent:#2F5AA8; --accent-ink:#FFFFFF; --danger:#B3261E; --warn-bg:#FFF4DB; --warn-ink:#6B4A00;
+  --c-class:#CDE5F4; --c-fixed:#D9EED3; --c-special:#EAD2EE; --c-free:#FBE0D2; --c-sleep:#E4E7EC; --c-study:#FCF3A1;
+  --c-ink:#1C2430;
+  --font:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#12161C; --surface:#1A2029; --ink:#E6EAF0; --muted:#98A2B3; --line:#2C3440; --line-strong:#4A5566;
+    --accent:#7FA6EC; --accent-ink:#0E1522; --danger:#F2867D; --warn-bg:#3A3018; --warn-ink:#F2D78C;
+    --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417;
+    --c-ink:#E6EAF0;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#12161C; --surface:#1A2029; --ink:#E6EAF0; --muted:#98A2B3; --line:#2C3440; --line-strong:#4A5566;
+  --accent:#7FA6EC; --accent-ink:#0E1522; --danger:#F2867D; --warn-bg:#3A3018; --warn-ink:#F2D78C;
+  --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417;
+  --c-ink:#E6EAF0;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;padding:0 16px}
+.wrap{max-width:1080px;margin:0 auto;padding-block:28px 120px}
+h1{font-size:26px;font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
+h2{font-size:17px;font-weight:600;margin:0;text-wrap:balance}
+.lede{color:var(--muted);margin:6px 0 0;max-width:62ch}
+header.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+.btn{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);padding:9px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted);padding:6px 8px}
+.btn.ghost:hover{color:var(--ink)}
+.btn:focus-visible,input:focus-visible,.chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.notice{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;padding:10px 14px;margin-bottom:18px;font-size:14px}
+.sections{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:16px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.sec-head{display:flex;gap:10px;align-items:flex-start}
+.num{flex:none;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;font-family:var(--mono);font-size:13px;font-weight:500;color:var(--c-ink)}
+.sec-head p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.rows{display:flex;flex-direction:column;gap:10px}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px;border:1px solid var(--line);border-radius:8px}
+.row.err{border-color:var(--danger)}
+.row-main{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+input[type=text],input[type=time],input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;min-width:0}
+input[type=text]{flex:1 1 140px}
+input[type=time]{font-family:var(--mono);font-size:14px;width:118px}
+input[type=number]{font-family:var(--mono);width:90px}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+.chip{font:inherit;font-size:13px;width:30px;height:30px;border-radius:6px;border:1px solid var(--line);background:var(--bg);color:var(--muted);cursor:pointer;padding:0}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+.tilde{color:var(--muted)}
+.add{align-self:flex-start}
+.field{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px}
+.errmsg{color:var(--danger);font-size:13px;margin:0}
+.actionbar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;z-index:5}
+.actionbar .in{max-width:1080px;width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.actionbar .hint{color:var(--muted);font-size:13px}
+
+/* result */
+.summary{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;margin-bottom:14px}
+.stat{font-size:14px;color:var(--muted)}
+.stat b{color:var(--ink);font-family:var(--mono);font-weight:500}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:14px;font-size:13px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:3px;border:1px solid var(--line)}
+.warns{margin:0 0 14px;padding:10px 14px 10px 30px;background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;font-size:13px}
+.tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;font-size:13px}
+.tt th,.tt td{border:1px solid var(--line);padding:0;text-align:center;vertical-align:middle}
+.tt thead th{background:var(--bg);font-weight:600;padding:6px 0;position:sticky;top:0;z-index:1}
+.tt thead th.we{color:var(--muted)}
+.tt th.time{width:64px;font-family:var(--mono);font-weight:400;font-size:12px;color:var(--ink);background:var(--bg);height:24px}
+.tt th.time.half{color:var(--muted)}
+.tt tr.hour td,.tt tr.hour th{border-top-color:var(--line-strong)}
+.tt td{height:24px}
+.blk{color:var(--c-ink);line-height:1.25;padding:2px 4px}
+.blk .n{font-weight:600;display:block;overflow-wrap:anywhere}
+.blk .t{font-family:var(--mono);font-size:11px;opacity:.75;display:block}
+.cat-class{background:var(--c-class)} .cat-fixed{background:var(--c-fixed)} .cat-special{background:var(--c-special)}
+.cat-free{background:var(--c-free)} .cat-sleep{background:var(--c-sleep)} .cat-study{background:var(--c-study)}
+.blk.cat-sleep{color:var(--muted)}
+@media (max-width:560px){ h1{font-size:22px} input[type=time]{width:108px} }
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <!-- 입력 화면 -->
+  <section id="page-input">
+    <header class="top">
+      <div>
+        <h1>주간 시간표 플래너</h1>
+        <p class="lede">여섯 가지 일정을 입력하면 월–일, 30분 단위 주간 시간표를 만들어요. 순공 시간은 비어 있는 깨어 있는 시간에 자동으로 배치돼요.</p>
+      </div>
+    </header>
+    <div class="notice" id="sample-notice" hidden>
+      <span>예시 일정이 채워져 있어요. 내 일정으로 바꿔서 입력하세요.</span>
+      <button class="btn ghost" id="btn-clear" type="button">모두 비우기</button>
+    </div>
+    <div class="sections" id="sections"></div>
+  </section>
+
+  <!-- 결과 화면 -->
+  <section id="page-result" hidden>
+    <header class="top">
+      <div>
+        <h1>이번 주 시간표</h1>
+        <p class="lede" id="result-sub"></p>
+      </div>
+      <button class="btn" id="btn-back" type="button">← 뒤로 (일정 수정)</button>
+    </header>
+    <div class="summary" id="summary"></div>
+    <div class="legend" id="legend"></div>
+    <ul class="warns" id="warns" hidden></ul>
+    <div class="tablebox"><table class="tt" id="tt"></table></div>
+  </section>
+</div>
+
+<div class="actionbar" id="actionbar">
+  <div class="in">
+    <span class="hint" id="bar-hint">시간은 30분 단위로 맞춰져요.</span>
+    <button class="btn primary" id="btn-build" type="button">시간표 만들기 →</button>
+  </div>
+</div>
+
+<script>
+(function(){
+const DAYS=['월','화','수','목','금','토','일'];
+const CATS={
+  class:{label:'수업',color:'--c-class'},
+  fixed:{label:'고정 일정',color:'--c-fixed'},
+  special:{label:'이번 주 약속',color:'--c-special'},
+  free:{label:'자유시간',color:'--c-free'},
+  sleep:{label:'취침',color:'--c-sleep'},
+  study:{label:'순공',color:'--c-study'}
+};
+const STORE='weekly-timetable-v1';
+
+const SAMPLE={
+  classes:[
+    {name:'스마트시티',days:[0],start:'10:00',end:'13:00'},
+    {name:'질적 연구',days:[0],start:'14:00',end:'17:00'},
+    {name:'미래도시 워크샵',days:[3],start:'10:00',end:'13:00'}
+  ],
+  fixed:[
+    {name:'테니스',days:[0,1,3,4],start:'07:00',end:'07:30'},
+    {name:'등교',days:[0,3],start:'08:00',end:'09:00'},
+    {name:'하교',days:[0,2,3],start:'20:00',end:'21:00'},
+    {name:'필라테스',days:[1],start:'19:00',end:'20:00'},
+    {name:'필라테스',days:[5],start:'10:00',end:'11:00'}
+  ],
+  special:[
+    {name:'치과',days:[2],start:'15:00',end:'16:00'},
+    {name:'저녁 약속',days:[4],start:'18:30',end:'21:00'}
+  ],
+  free:[
+    {name:'자유시간',days:[5],start:'14:00',end:'18:00'},
+    {name:'자유시간',days:[6],start:'13:00',end:'17:00'}
+  ],
+  sleep:{wdWake:'06:30',wdBed:'23:30',weWake:'08:00',weBed:'00:00'},
+  goal:25,
+  keepMeals:true
+};
+const EMPTY=()=>({classes:[],fixed:[],special:[],free:[],sleep:{wdWake:'07:00',wdBed:'23:30',weWake:'08:00',weBed:'00:00'},goal:20,keepMeals:true});
+
+let state, isSample=false;
+try{ const s=localStorage.getItem(STORE); if(s){ state=JSON.parse(s); } }catch(e){}
+if(!state){ state=JSON.parse(JSON.stringify(SAMPLE)); isSample=true; }
+function save(){ try{ localStorage.setItem(STORE,JSON.stringify(state)); }catch(e){} }
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toMin=t=>{ if(!t) return null; const [h,m]=t.split(':').map(Number); return h*60+m; };
+const fmt=m=>{ m=((m%1440)+1440)%1440; return Math.floor(m/60)+':'+String(m%60).padStart(2,'0'); };
+const floor30=m=>Math.floor(m/30)*30, ceil30=m=>Math.ceil(m/30)*30;
+
+/* ---------- 입력 화면 ---------- */
+const LISTS=[
+  {key:'classes',cat:'class',n:1,title:'수업',desc:'과목명과 요일, 수업 시작·종료 시간',ph:'과목명 (예: 도시계획론)',addLabel:'수업 추가'},
+  {key:'fixed',cat:'fixed',n:2,title:'고정 일정',desc:'매주 반복되는 일정 (운동, 통학, 출퇴근 등)',ph:'일정 이름 (예: 운동)',addLabel:'고정 일정 추가'},
+  {key:'special',cat:'special',n:3,title:'이번 주 특별 일정',desc:'이번 주에만 있는 약속 (병원, 식사 약속 등)',ph:'약속 이름 (예: 병원)',addLabel:'약속 추가'},
+  {key:'free',cat:'free',n:4,title:'자유시간',desc:'쉬고 싶은 요일과 시간대. 순공이 배치되지 않아요.',ph:'이름 (기본: 자유시간)',addLabel:'자유시간 추가'}
+];
+
+function renderInput(){
+  const box=$('sections'); box.innerHTML='';
+  LISTS.forEach(L=>{
+    const sec=document.createElement('div'); sec.className='sec';
+    sec.innerHTML=`<div class="sec-head"><span class="num" style="background:var(${CATS[L.cat].color})">${L.n}</span><div><h2>${L.title}</h2><p>${L.desc}</p></div></div><div class="rows"></div><button class="btn add" type="button">+ ${L.addLabel}</button>`;
+    const rows=sec.querySelector('.rows');
+    state[L.key].forEach((it,i)=>rows.appendChild(rowEl(L,it,i)));
+    sec.querySelector('.add').onclick=()=>{ state[L.key].push({name:'',days:[],start:'',end:''}); save(); renderInput(); const ins=box.querySelectorAll(`[data-list="${L.key}"] input[type=text]`); ins[ins.length-1]?.focus(); };
+    box.appendChild(sec);
+  });
+  // 5. 기상/취침
+  const s5=document.createElement('div'); s5.className='sec';
+  s5.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-sleep)">5</span><div><h2>기상·취침 시간</h2><p>주중(월–금)과 주말(토–일)을 따로 정해요. 자정을 넘기면 00:30처럼 입력하세요.</p></div></div>
+  <div class="grid2">
+    <label class="field">주중 기상<input type="time" step="1800" id="wdWake" value="${state.sleep.wdWake}"></label>
+    <label class="field">주중 취침<input type="time" step="1800" id="wdBed" value="${state.sleep.wdBed}"></label>
+    <label class="field">주말 기상<input type="time" step="1800" id="weWake" value="${state.sleep.weWake}"></label>
+    <label class="field">주말 취침<input type="time" step="1800" id="weBed" value="${state.sleep.weBed}"></label>
+  </div>`;
+  box.appendChild(s5);
+  ['wdWake','wdBed','weWake','weBed'].forEach(k=>{ $(k).oninput=e=>{ state.sleep[k]=e.target.value; save(); }; });
+  // 6. 순공 목표
+  const s6=document.createElement('div'); s6.className='sec';
+  s6.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-study)">6</span><div><h2>주간 순공 목표</h2><p>비어 있는 깨어 있는 시간에 자동 배치해요. 주중·낮(9–18시)을 먼저 채우고, 요일마다 고르게 나눠요.</p></div></div>
+  <label class="field">한 주 목표 (시간)<input type="number" id="goal" min="0" max="120" step="0.5" value="${state.goal}"></label>
+  <label class="check"><input type="checkbox" id="keepMeals" ${state.keepMeals?'checked':''}> 식사 시간(12:00–13:00, 18:00–19:00)은 비워두기</label>`;
+  box.appendChild(s6);
+  $('goal').oninput=e=>{ state.goal=parseFloat(e.target.value)||0; save(); };
+  $('keepMeals').onchange=e=>{ state.keepMeals=e.target.checked; save(); };
+  $('sample-notice').hidden=!isSample;
+}
+
+function rowEl(L,it,i){
+  const r=document.createElement('div'); r.className='row'; r.dataset.list=L.key; r.dataset.i=i;
+  const id=`${L.key}-${i}`;
+  r.innerHTML=`<div class="row-main">
+    <input type="text" id="${id}-name" placeholder="${L.ph}" value="${esc(it.name||'')}" aria-label="이름">
+    <div class="chips" role="group" aria-label="요일">${DAYS.map((d,di)=>`<button type="button" class="chip" id="${id}-d${di}" aria-pressed="${it.days.includes(di)}">${d}</button>`).join('')}</div>
+    <input type="time" step="1800" id="${id}-start" value="${it.start||''}" aria-label="시작 시간">
+    <span class="tilde">~</span>
+    <input type="time" step="1800" id="${id}-end" value="${it.end||''}" aria-label="종료 시간">
+  </div>
+  <button type="button" class="btn ghost" aria-label="삭제" title="삭제">✕</button>`;
+  r.querySelector(`#${id}-name`).oninput=e=>{ it.name=e.target.value; save(); };
+  r.querySelector(`#${id}-start`).oninput=e=>{ it.start=e.target.value; save(); };
+  r.querySelector(`#${id}-end`).oninput=e=>{ it.end=e.target.value; save(); };
+  r.querySelectorAll('.chip').forEach((c,di)=>c.onclick=()=>{
+    const k=it.days.indexOf(di); if(k>=0) it.days.splice(k,1); else it.days.push(di);
+    it.days.sort(); c.setAttribute('aria-pressed',it.days.includes(di)); save();
+  });
+  r.querySelector('.btn.ghost').onclick=()=>{ state[L.key].splice(i,1); save(); renderInput(); };
+  return r;
+}
+
+$('btn-clear').onclick=()=>{ state=EMPTY(); isSample=false; save(); renderInput(); };
+
+function validate(){
+  let ok=true;
+  document.querySelectorAll('.row').forEach(r=>r.classList.remove('err'));
+  document.querySelectorAll('.errmsg').forEach(e=>e.remove());
+  LISTS.forEach(L=>{
+    state[L.key].forEach((it,i)=>{
+      const blank=!it.name&&!it.days.length&&!it.start&&!it.end;
+      if(blank) return;
+      let msg='';
+      const needName=L.key!=='free';
+      if(needName&&!it.name.trim()) msg='이름을 입력하세요.';
+      else if(!it.days.length) msg='요일을 하나 이상 고르세요.';
+      else if(!it.start||!it.end) msg='시작·종료 시간을 입력하세요.';
+      else if(toMin(it.end)<=toMin(it.start)) msg='종료 시간이 시작 시간보다 늦어야 해요.';
+      if(msg){ ok=false; const r=document.querySelector(`.row[data-list="${L.key}"][data-i="${i}"]`); if(r){ r.classList.add('err'); const p=document.createElement('p'); p.className='errmsg'; p.textContent=msg; r.querySelector('.row-main').appendChild(p);} }
+    });
+  });
+  const s=state.sleep;
+  if(!s.wdWake||!s.wdBed||!s.weWake||!s.weBed){ ok=false; }
+  return ok;
+}
+
+/* ---------- 시간표 계산 ---------- */
+function build(){
+  const warns=[];
+  const s=state.sleep;
+  const wake=[],bed=[];
+  for(let d=0;d<7;d++){
+    const we=d>=5;
+    let w=floor30(toMin(we?s.weWake:s.wdWake)), b=ceil30(toMin(we?s.weBed:s.wdBed));
+    if(b<=w) b+=1440;
+    wake.push(w); bed.push(b);
+  }
+  const events=[];
+  const PRI={special:0,class:1,fixed:2,free:3};
+  const src=[['special','special'],['classes','class'],['fixed','fixed'],['free','free']];
+  src.forEach(([key,cat])=>state[key].forEach(it=>{
+    if(!it.days.length||!it.start||!it.end) return;
+    const a=floor30(toMin(it.start)), b=ceil30(toMin(it.end));
+    if(b<=a) return;
+    const name=(it.name||'').trim()||(cat==='free'?'자유시간':CATS[cat].label);
+    it.days.forEach(d=>events.push({cat,name,day:d,a,b,pri:PRI[cat]}));
+  }));
+  let gStart=Math.min(...wake), gEnd=Math.max(...bed);
+  events.forEach(e=>{ gStart=Math.min(gStart,e.a); gEnd=Math.max(gEnd,e.b); });
+  gStart=Math.floor(gStart/60)*60; gEnd=Math.ceil(gEnd/60)*60;
+  const N=(gEnd-gStart)/30;
+  const grid=[...Array(7)].map(()=>Array(N).fill(null));
+  // 취침
+  for(let d=0;d<7;d++) for(let r=0;r<N;r++){ const m=gStart+r*30; if(m<wake[d]||m>=bed[d]) grid[d][r]={cat:'sleep',name:'취침',pri:9}; }
+  // 일정 (우선순위 높은 것부터)
+  events.sort((x,y)=>x.pri-y.pri).forEach(e=>{
+    for(let m=e.a;m<e.b;m+=30){
+      const r=(m-gStart)/30, cur=grid[e.day][r];
+      if(!cur||cur.cat==='sleep'){
+        if(cur&&cur.cat==='sleep') addWarn(warns,`${DAYS[e.day]} ${e.name}: 취침 시간과 겹쳐요.`);
+        grid[e.day][r]={cat:e.cat,name:e.name,pri:e.pri};
+      } else if(!(cur.cat===e.cat&&cur.name===e.name)){
+        addWarn(warns,`${DAYS[e.day]} ${fmt(m)} 부근: ‘${e.name}’이(가) ‘${cur.name}’와 겹쳐서 ‘${cur.name}’을(를) 표시했어요.`);
+      }
+    }
+  });
+  // 순공 자동 배치
+  const goalSlots=Math.round((state.goal||0)*2);
+  const isMeal=m=>state.keepMeals&&((m>=720&&m<780)||(m>=1080&&m<1140));
+  const tiers=[[],[],[],[]];
+  for(let d=0;d<7;d++){
+    const q=[[],[],[],[]];
+    for(let r=0;r<N;r++){
+      const m=gStart+r*30;
+      if(grid[d][r]||m<wake[d]||m>=bed[d]||isMeal(m)) continue;
+      const day=m>=540&&m<1080;
+      const t=(d<5?0:2)+(day?0:1);
+      q[t].push(r);
+    }
+    q.forEach((list,t)=>tiers[t].push({d,list}));
+  }
+  let placed=0;
+  for(const tier of tiers){
+    let progress=true;
+    while(placed<goalSlots&&progress){
+      progress=false;
+      for(const {d,list} of tier){
+        if(placed>=goalSlots) break;
+        if(list.length){ const r=list.shift(); grid[d][r]={cat:'study',name:'순공',pri:8}; placed++; progress=true; }
+      }
+    }
+  }
+  if(placed<goalSlots) addWarn(warns,`빈 시간이 부족해서 순공을 ${placed/2}시간만 배치했어요 (목표 ${state.goal}시간).`);
+  return {grid,gStart,N,warns,placed};
+}
+function addWarn(arr,t){ if(!arr.includes(t)) arr.push(t); }
+
+/* ---------- 결과 화면 ---------- */
+function renderResult(res){
+  const {grid,gStart,N,warns,placed}=res;
+  // 합계
+  const tot={class:0,fixed:0,special:0,free:0,study:0};
+  grid.forEach(col=>col.forEach(c=>{ if(c&&tot[c.cat]!==undefined) tot[c.cat]+=0.5; }));
+  $('result-sub').textContent=`${fmt(gStart)}부터 ${fmt(gStart+N*30)}까지, 30분 단위로 보여줘요.`;
+  const pct=state.goal?Math.round(placed/2/state.goal*100):0;
+  $('summary').innerHTML=
+    `<span class="stat">순공 <b>${placed/2}</b> / ${state.goal}시간 (${pct}%)</span>`+
+    `<span class="stat">수업 <b>${tot.class}</b>시간</span>`+
+    `<span class="stat">고정 <b>${tot.fixed}</b>시간</span>`+
+    `<span class="stat">약속 <b>${tot.special}</b>시간</span>`+
+    `<span class="stat">자유 <b>${tot.free}</b>시간</span>`;
+  $('legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<span><i class="sw" style="background:var(${v.color})"></i>${v.label}</span>`).join('');
+  const w=$('warns'); w.hidden=!warns.length; w.innerHTML=warns.map(t=>`<li>${esc(t)}</li>`).join('');
+
+  // 블록(연속 칸 합치기)
+  const span=[...Array(7)].map(()=>Array(N).fill(0)); // >0: 블록 시작 rowspan, -1: 가려짐, 0: 빈칸
+  for(let d=0;d<7;d++){
+    let r=0;
+    while(r<N){
+      const c=grid[d][r];
+      if(!c){ r++; continue; }
+      let k=r+1; while(k<N&&grid[d][k]&&grid[d][k].cat===c.cat&&grid[d][k].name===c.name) k++;
+      span[d][r]=k-r; for(let j=r+1;j<k;j++) span[d][j]=-1; r=k;
+    }
+  }
+  let h='<colgroup><col style="width:64px">'+DAYS.map(()=>'<col>').join('')+'</colgroup>';
+  h+='<thead><tr><th></th>'+DAYS.map((d,i)=>`<th class="${i>=5?'we':''}">${d}</th>`).join('')+'</tr></thead><tbody>';
+  for(let r=0;r<N;r++){
+    const m=gStart+r*30, hour=m%60===0;
+    h+=`<tr class="${hour?'hour':''}"><th class="time ${hour?'':'half'}">${fmt(m)}</th>`;
+    for(let d=0;d<7;d++){
+      const sp=span[d][r];
+      if(sp===-1) continue;
+      if(sp===0){ h+='<td></td>'; continue; }
+      const c=grid[d][r];
+      const a=m, b=m+sp*30;
+      const t=sp>=2?`<span class="t">${fmt(a)}–${fmt(b)}</span>`:'';
+      h+=`<td rowspan="${sp}" class="blk cat-${c.cat}" title="${esc(c.name)} ${fmt(a)}–${fmt(b)}"><span class="n">${esc(c.name)}</span>${t}</td>`;
+    }
+    h+='</tr>';
+  }
+  $('tt').innerHTML=h+'</tbody>';
+}
+
+/* ---------- 화면 전환 ---------- */
+function show(page){
+  $('page-input').hidden=page!=='input';
+  $('page-result').hidden=page!=='result';
+  $('actionbar').hidden=page!=='input';
+  window.scrollTo(0,0);
+}
+$('btn-build').onclick=()=>{
+  if(!validate()){ $('bar-hint').textContent='빨간 표시된 항목을 확인해 주세요.'; const e=document.querySelector('.row.err'); e&&e.scrollIntoView({block:'center'}); return; }
+  $('bar-hint').textContent='시간은 30분 단위로 맞춰져요.';
+  renderResult(build()); show('result');
+};
+$('btn-back').onclick=()=>{ renderInput(); show('input'); };
+
+renderInput();
+show('input');
+})();
+</script>
+</body>
+</html>
