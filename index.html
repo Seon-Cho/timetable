@@ -12,7 +12,7 @@
   --bg:#F3F5F8; --surface:#FFFFFF; --ink:#1C2430; --muted:#5E6878; --line:#D5DBE3; --line-strong:#9AA4B2;
   --accent:#2F5AA8; --accent-ink:#FFFFFF; --danger:#B3261E; --warn-bg:#FFF4DB; --warn-ink:#6B4A00;
   --c-class:#CDE5F4; --c-fixed:#D9EED3; --c-special:#EAD2EE; --c-free:#FBE0D2; --c-sleep:#E4E7EC; --c-study:#FCF3A1;
-  --c-ink:#1C2430;
+  --c-ink:#1C2430; --ok:#2E7D4F; --ok-ink:#FFFFFF; --accent-soft:#DCE6F7;
   --font:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
 }
@@ -22,7 +22,7 @@
     --bg:#12161C; --surface:#1A2029; --ink:#E6EAF0; --muted:#98A2B3; --line:#2C3440; --line-strong:#4A5566;
     --accent:#7FA6EC; --accent-ink:#0E1522; --danger:#F2867D; --warn-bg:#3A3018; --warn-ink:#F2D78C;
     --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417;
-    --c-ink:#E6EAF0;
+    --c-ink:#E6EAF0; --ok:#6CC592; --ok-ink:#0E1A13; --accent-soft:#24324A;
   }
 }
 :root[data-theme="dark"]{
@@ -30,7 +30,7 @@
   --bg:#12161C; --surface:#1A2029; --ink:#E6EAF0; --muted:#98A2B3; --line:#2C3440; --line-strong:#4A5566;
   --accent:#7FA6EC; --accent-ink:#0E1522; --danger:#F2867D; --warn-bg:#3A3018; --warn-ink:#F2D78C;
   --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417;
-  --c-ink:#E6EAF0;
+  --c-ink:#E6EAF0; --ok:#6CC592; --ok-ink:#0E1A13; --accent-soft:#24324A;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -107,6 +107,31 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
 .tt td.excl:hover::after,.tt td.excl:focus-visible::after{content:"되돌리기";font-size:11px;color:var(--muted)}
 .tip{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px}
 .tip .sw{display:inline-block;vertical-align:-2px;margin-right:4px}
+/* 순공: 드래그, O/X */
+.tt td.slot{touch-action:none;user-select:none;-webkit-user-select:none;padding-left:26px}
+.tt td.slot.dragging{opacity:.35}
+.tt td.drop-ok{outline:2px solid var(--accent);outline-offset:-2px;background:var(--accent-soft)}
+.mk{position:absolute;left:4px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:4px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font:600 11px/1 var(--mono);padding:0;cursor:pointer;display:grid;place-items:center;z-index:1}
+.mk:hover{border-color:var(--ink)}
+.mk:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.mk.mk-o{background:var(--ok);border-color:var(--ok);color:var(--ok-ink)}
+.mk.mk-x{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.drag-ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:30;background:var(--c-study);color:var(--c-ink);border:2px solid var(--accent);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+/* 상단 순공 현황 */
+.dash{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:22px;display:grid;gap:12px}
+.dash-top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 24px}
+.dash-label{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+.dash-big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.dnum{font-family:var(--mono);font-size:48px;font-weight:500;line-height:1;color:var(--ok)}
+.dunit{font-size:18px;color:var(--muted)}
+.dplan{font-family:var(--mono);font-size:26px;color:var(--ink)}
+.dpct{font-family:var(--mono);font-size:32px;font-weight:500;color:var(--ink);line-height:1}
+.bar{height:14px;border-radius:7px;background:var(--bg);border:1px solid var(--line);display:flex;overflow:hidden}
+.bar i{display:block;height:100%}
+.bar .o{background:var(--ok)} .bar .x{background:var(--danger);opacity:.75}
+.dash-sub{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.dash-sub b{color:var(--ink);font-weight:600}
+@media (max-width:560px){ .dnum{font-size:38px} .dpct{font-size:26px} }
 @media (max-width:560px){ h1{font-size:22px} input[type=time]{width:108px} }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -118,7 +143,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <header class="top">
       <div>
         <h1>주간 시간표 플래너</h1>
-        <p class="lede">여섯 가지 일정을 입력하면 월–일, 30분 단위 주간 시간표를 만들어요. 순공 시간은 비어 있는 깨어 있는 시간에 자동으로 배치돼요.</p>
+        <p class="lede">여섯 가지 일정을 입력하면 월–일, 30분 단위 주간 시간표를 만들어요. 순공 시간은 빈 시간에 자동 배치되고, 시간표에서 직접 옮기거나 O/X로 실제 공부 여부를 표시할 수 있어요.</p>
       </div>
     </header>
     <div class="notice" id="sample-notice" hidden>
@@ -130,6 +155,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
 
   <!-- 결과 화면 -->
   <section id="page-result" hidden>
+    <div class="dash" id="dash" aria-live="polite"></div>
     <header class="top">
       <div>
         <h1>이번 주 시간표</h1>
@@ -140,7 +166,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <div class="summary" id="summary"></div>
     <div class="legend" id="legend"></div>
     <ul class="warns" id="warns" hidden></ul>
-    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸을 누르면 30분씩 빠지고, 그 시간은 다음 우선순위의 빈 시간으로 옮겨져요. 뺀 칸을 다시 누르면 되돌려요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>뺀 칸 모두 되돌리기</button></div>
+    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸은 끌어서 빈칸(식사 시간 포함)으로 옮기고, 누르면 30분씩 빠져요. 칸 왼쪽 네모를 누르면 O → X → 비움 순으로 공부 여부를 표시해요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>자동 배치로 되돌리기</button></div>
     <div class="tablebox"><table class="tt" id="tt"></table></div>
   </section>
 </div>
@@ -331,6 +357,14 @@ function build(){
   });
   // 순공 자동 배치
   const goalSlots=Math.round((state.goal||0)*2);
+  // 직접 옮겨 둔 순공 칸을 먼저 넣음 (식사 시간도 가능)
+  let placed=0;
+  (state.pinned||[]).forEach(k=>{
+    const [d,m]=k.split('-').map(Number), r=(m-gStart)/30;
+    if(!(r>=0&&r<N&&Number.isInteger(r))) return;
+    if(!grid[d][r]){ grid[d][r]={cat:'study',name:'순공',pri:8,pinned:true}; placed++; }
+    else addWarn(warns,`${DAYS[d]} ${fmt(m)}에 옮겨 둔 순공이 ‘${grid[d][r].name}’과 겹쳐서 빠졌어요.`);
+  });
   const isMeal=m=>state.keepMeals&&((m>=720&&m<780)||(m>=1080&&m<1140));
   const ex=new Set(state.excluded||[]);
   const tiers=[[],[],[],[]];
@@ -346,7 +380,6 @@ function build(){
     }
     q.forEach((list,t)=>tiers[t].push({d,list}));
   }
-  let placed=0;
   for(const tier of tiers){
     let progress=true;
     while(placed<goalSlots&&progress){
@@ -369,21 +402,43 @@ function renderResult(res){
   const tot={class:0,fixed:0,special:0,free:0,study:0};
   grid.forEach(col=>col.forEach(c=>{ if(c&&tot[c.cat]!==undefined) tot[c.cat]+=0.5; }));
   $('result-sub').textContent=`${fmt(gStart)}부터 ${fmt(gStart+N*30)}까지, 30분 단위로 보여줘요.`;
-  const pct=state.goal?Math.round(placed/2/state.goal*100):0;
   $('summary').innerHTML=
-    `<span class="stat">순공 <b>${placed/2}</b> / ${state.goal}시간 (${pct}%)</span>`+
     `<span class="stat">수업 <b>${tot.class}</b>시간</span>`+
     `<span class="stat">고정 <b>${tot.fixed}</b>시간</span>`+
     `<span class="stat">약속 <b>${tot.special}</b>시간</span>`+
     `<span class="stat">자유 <b>${tot.free}</b>시간</span>`;
   $('legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<span><i class="sw" style="background:var(${v.color})"></i>${v.label}</span>`).join('');
   const w=$('warns'); w.hidden=!warns.length; w.innerHTML=warns.map(t=>`<li>${esc(t)}</li>`).join('');
-  const nEx=(state.excluded||[]).length;
-  $('btn-reset-ex').hidden=!nEx; $('btn-reset-ex').textContent=`뺀 칸 ${nEx}개 모두 되돌리기`;
+  const changed=(state.excluded||[]).length+(state.pinned||[]).length;
+  $('btn-reset-ex').hidden=!changed;
 
-  // 블록(연속 칸 합치기). 순공은 30분씩 따로 눌러야 하므로 칸을 나눠 두고 테두리만 이어 보이게 함
+  // 상단 현황: 계획 대비 실제 순공 (O 표시한 칸)
+  const marks=state.marks||{};
+  let o=0,x=0;
+  for(let d=0;d<7;d++) for(let r=0;r<N;r++){
+    const c=grid[d][r]; if(!c||c.cat!=='study') continue;
+    const v=marks[d+'-'+(gStart+r*30)]; if(v==='o') o++; else if(v==='x') x++;
+  }
+  const plan=placed/2, real=o/2, rest=placed-o-x;
+  const pct=plan?Math.round(real/plan*100):0;
+  const wo=placed?o/placed*100:0, wx=placed?x/placed*100:0;
+  $('dash').innerHTML=`
+    <div class="dash-top">
+      <div>
+        <div class="dash-label">실제 순공 / 계획</div>
+        <div class="dash-big"><span class="dnum">${real}</span><span class="dunit">시간</span><span class="dplan">/ ${plan}</span><span class="dunit">시간</span></div>
+      </div>
+      <div style="text-align:right">
+        <div class="dash-label">달성률</div>
+        <div class="dpct">${pct}%</div>
+      </div>
+    </div>
+    <div class="bar" role="img" aria-label="계획 ${plan}시간 중 실제 ${real}시간"><i class="o" style="width:${wo}%"></i><i class="x" style="width:${wx}%"></i></div>
+    <div class="dash-sub"><span>O 공부함 <b>${o/2}시간</b></span><span>X 못 함 <b>${x/2}시간</b></span><span>아직 표시 안 함 <b>${rest/2}시간</b></span><span>주간 목표 <b>${state.goal}시간</b></span></div>`;
+
+  // 블록(연속 칸 합치기). 순공은 30분씩 따로 다뤄야 하므로 칸을 나눠 두고 테두리만 이어 보이게 함
   const span=[...Array(7)].map(()=>Array(N).fill(0)); // >0: 블록 시작 rowspan, -1: 가려짐, 0: 빈칸
-  const run=[...Array(7)].map(()=>Array(N).fill(null)); // 순공 칸의 이어진 구간 정보
+  const run=[...Array(7)].map(()=>Array(N).fill(null));
   for(let d=0;d<7;d++){
     let r=0;
     while(r<N){
@@ -407,16 +462,17 @@ function renderResult(res){
       const sp=span[d][r], c=grid[d][r];
       if(sp===-1) continue;
       if(c&&c.cat==='excl'){ h+=`<td class="excl" data-d="${d}" data-m="${m}" tabindex="0" role="button" title="${DAYS[d]} ${fmt(m)} 순공 되돌리기"></td>`; continue; }
-      if(sp===0){ h+='<td></td>'; continue; }
+      if(sp===0){ h+=`<td class="empty" data-d="${d}" data-m="${m}"></td>`; continue; }
       if(c.cat==='study'){
-        const R=run[d][r];
+        const R=run[d][r], key=d+'-'+m, v=marks[key];
         const cls=['blk','cat-study','slot'];
         if(R.i>0) cls.push('join-up');
         if(R.i<R.len-1) cls.push('join-down');
         let inner='';
         if(R.i===0) inner=`<span class="n">순공</span>`;
         else if(R.i===1) inner=`<span class="t">${fmt(R.a)}–${fmt(R.b)}</span>`;
-        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" tabindex="0" role="button" title="${DAYS[d]} ${fmt(m)}–${fmt(m+30)} 순공 빼기">${inner}</td>`;
+        const mk=`<button type="button" class="mk${v?' mk-'+v:''}" data-k="${key}" aria-label="${DAYS[d]} ${fmt(m)} 공부 여부: ${v==='o'?'O':v==='x'?'X':'표시 안 함'}">${v==='o'?'O':v==='x'?'X':''}</button>`;
+        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" tabindex="0" role="button" title="${DAYS[d]} ${fmt(m)}–${fmt(m+30)} 순공 · 끌어서 옮기기, 눌러서 빼기">${mk}${inner}</td>`;
         continue;
       }
       const a=m, b=m+sp*30;
@@ -428,23 +484,90 @@ function renderResult(res){
   $('tt').innerHTML=h+'</tbody>';
 }
 
-/* 순공 칸 빼기 / 되돌리기 */
-function toggleSlot(td){
-  const key=td.dataset.d+'-'+td.dataset.m;
-  state.excluded=state.excluded||[];
-  const i=state.excluded.indexOf(key);
-  if(td.classList.contains('slot')&&i<0) state.excluded.push(key);
-  else if(td.classList.contains('excl')&&i>=0) state.excluded.splice(i,1);
-  else return;
-  save();
+/* 화면 위치를 유지한 채 다시 그리기 */
+function rerender(focusSel){
   const sx=window.scrollX, sy=window.scrollY, box=document.querySelector('.tablebox'), bx=box.scrollLeft;
   renderResult(build());
   window.scrollTo(sx,sy); box.scrollLeft=bx;
-  const again=document.querySelector(`#tt td[data-d="${td.dataset.d}"][data-m="${td.dataset.m}"]`); again&&again.focus({preventScroll:true});
+  if(focusSel){ const el=document.querySelector(focusSel); el&&el.focus({preventScroll:true}); }
 }
-$('tt').addEventListener('click',e=>{ const td=e.target.closest('td.slot,td.excl'); if(td) toggleSlot(td); });
-$('tt').addEventListener('keydown',e=>{ if(e.key!=='Enter'&&e.key!==' ') return; const td=e.target.closest('td.slot,td.excl'); if(td){ e.preventDefault(); toggleSlot(td); } });
-$('btn-reset-ex').onclick=()=>{ state.excluded=[]; save(); renderResult(build()); };
+const arr=k=>(state[k]=state[k]||[]);
+const del=(k,v)=>{ const a=arr(k), i=a.indexOf(v); if(i>=0) a.splice(i,1); };
+const add=(k,v)=>{ const a=arr(k); if(!a.includes(v)) a.push(v); };
+
+/* 순공 칸 빼기 / 되돌리기 */
+function toggleSlot(td){
+  const key=td.dataset.d+'-'+td.dataset.m;
+  if(td.classList.contains('slot')){ del('pinned',key); add('excluded',key); if(state.marks) delete state.marks[key]; }
+  else if(td.classList.contains('excl')) del('excluded',key);
+  else return;
+  save();
+  rerender(`#tt td[data-d="${td.dataset.d}"][data-m="${td.dataset.m}"]`);
+}
+/* O → X → 비움 */
+function cycleMark(btn){
+  const k=btn.dataset.k; state.marks=state.marks||{};
+  const v=state.marks[k]; const nv=v==='o'?'x':v==='x'?'':'o';
+  if(nv) state.marks[k]=nv; else delete state.marks[k];
+  save(); rerender(`.mk[data-k="${k}"]`);
+}
+/* 순공 칸 옮기기 */
+function moveSlot(src,dst){
+  const ks=src.dataset.d+'-'+src.dataset.m, kd=dst.dataset.d+'-'+dst.dataset.m;
+  if(arr('pinned').includes(ks)) del('pinned',ks); else add('excluded',ks);
+  del('excluded',kd); add('pinned',kd);
+  state.marks=state.marks||{};
+  if(state.marks[ks]){ state.marks[kd]=state.marks[ks]; delete state.marks[ks]; }
+  save(); rerender();
+}
+
+let drag=null, suppressClick=false;
+$('tt').addEventListener('pointerdown',e=>{
+  if(e.button!==0||e.target.closest('.mk')) return;
+  const td=e.target.closest('td.slot'); if(!td) return;
+  drag={src:td,x:e.clientX,y:e.clientY,on:false,ghost:null,target:null,id:e.pointerId};
+});
+window.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.id) return;
+  if(!drag.on){
+    if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<6) return;
+    drag.on=true; drag.src.classList.add('dragging');
+    const g=document.createElement('div'); g.className='drag-ghost';
+    g.textContent=`순공 30분 · ${DAYS[+drag.src.dataset.d]} ${fmt(+drag.src.dataset.m)}`;
+    document.body.appendChild(g); drag.ghost=g;
+  }
+  e.preventDefault();
+  drag.ghost.style.transform=`translate(${e.clientX+12}px,${e.clientY-34}px)`;
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  const t=el&&el.closest?el.closest('#tt td.empty,#tt td.excl'):null;
+  if(t!==drag.target){ drag.target&&drag.target.classList.remove('drop-ok'); drag.target=t; t&&t.classList.add('drop-ok'); }
+  if(t) drag.ghost.textContent=`→ ${DAYS[+t.dataset.d]} ${fmt(+t.dataset.m)}`;
+  else drag.ghost.textContent=`순공 30분 · ${DAYS[+drag.src.dataset.d]} ${fmt(+drag.src.dataset.m)}`;
+  // 화면 가장자리에서 자동 스크롤
+  if(e.clientY<60) window.scrollBy(0,-14); else if(e.clientY>window.innerHeight-60) window.scrollBy(0,14);
+},{passive:false});
+function endDrag(e,cancel){
+  if(!drag||(e&&e.pointerId!==drag.id)) return;
+  const d=drag; drag=null;
+  if(!d.on) return;
+  suppressClick=true; setTimeout(()=>{suppressClick=false;},0);
+  d.ghost&&d.ghost.remove(); d.src.classList.remove('dragging'); d.target&&d.target.classList.remove('drop-ok');
+  if(!cancel&&d.target) moveSlot(d.src,d.target);
+}
+window.addEventListener('pointerup',e=>endDrag(e,false));
+window.addEventListener('pointercancel',e=>endDrag(e,true));
+
+$('tt').addEventListener('click',e=>{
+  if(suppressClick) return;
+  const b=e.target.closest('.mk'); if(b){ e.stopPropagation(); cycleMark(b); return; }
+  const td=e.target.closest('td.slot,td.excl'); if(td) toggleSlot(td);
+});
+$('tt').addEventListener('keydown',e=>{
+  if(e.key!=='Enter'&&e.key!==' ') return;
+  if(e.target.closest('.mk')) return; // 버튼 기본 동작 사용
+  const td=e.target.closest('td.slot,td.excl'); if(td){ e.preventDefault(); toggleSlot(td); }
+});
+$('btn-reset-ex').onclick=()=>{ state.excluded=[]; state.pinned=[]; save(); rerender(); };
 
 /* ---------- 화면 전환 ---------- */
 function show(page){
