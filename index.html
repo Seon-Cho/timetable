@@ -11,7 +11,7 @@
 :root{
   --bg:#F3F5F8; --surface:#FFFFFF; --ink:#1C2430; --muted:#5E6878; --line:#D5DBE3; --line-strong:#9AA4B2;
   --accent:#2F5AA8; --accent-ink:#FFFFFF; --danger:#B3261E; --warn-bg:#FFF4DB; --warn-ink:#6B4A00;
-  --c-class:#CDE5F4; --c-fixed:#D9EED3; --c-special:#EAD2EE; --c-free:#FBE0D2; --c-sleep:#E4E7EC; --c-study:#FCF3A1;
+  --c-class:#CDE5F4; --c-fixed:#D9EED3; --c-special:#EAD2EE; --c-free:#FBE0D2; --c-sleep:#E4E7EC; --c-study:#FCF3A1; --c-done:#4FAE6A; --c-fail:#D9544A; --c-st-ink:#FFFFFF; --now:#E0342A;
   --c-ink:#1C2430; --ok:#2E7D4F; --ok-ink:#FFFFFF; --accent-soft:#DCE6F7;
   --font:"IBM Plex Sans KR",-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
@@ -21,7 +21,7 @@
     color-scheme:dark;
     --bg:#12161C; --surface:#1A2029; --ink:#E6EAF0; --muted:#98A2B3; --line:#2C3440; --line-strong:#4A5566;
     --accent:#7FA6EC; --accent-ink:#0E1522; --danger:#F2867D; --warn-bg:#3A3018; --warn-ink:#F2D78C;
-    --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417;
+    --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417; --c-done:#2E8A4C; --c-fail:#B23E36; --c-st-ink:#FFFFFF; --now:#FF5A4F;
     --c-ink:#E6EAF0; --ok:#6CC592; --ok-ink:#0E1A13; --accent-soft:#24324A;
   }
 }
@@ -29,7 +29,7 @@
   color-scheme:dark;
   --bg:#12161C; --surface:#1A2029; --ink:#E6EAF0; --muted:#98A2B3; --line:#2C3440; --line-strong:#4A5566;
   --accent:#7FA6EC; --accent-ink:#0E1522; --danger:#F2867D; --warn-bg:#3A3018; --warn-ink:#F2D78C;
-  --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417;
+  --c-class:#1F3B52; --c-fixed:#213E2C; --c-special:#3E2848; --c-free:#4A2F24; --c-sleep:#262B33; --c-study:#4A4417; --c-done:#2E8A4C; --c-fail:#B23E36; --c-st-ink:#FFFFFF; --now:#FF5A4F;
   --c-ink:#E6EAF0; --ok:#6CC592; --ok-ink:#0E1A13; --accent-soft:#24324A;
 }
 *{box-sizing:border-box}
@@ -82,7 +82,7 @@ input[type=number]{font-family:var(--mono);width:90px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .sw{width:14px;height:14px;border-radius:3px;border:1px solid var(--line)}
 .warns{margin:0 0 14px;padding:10px 14px 10px 30px;background:var(--warn-bg);color:var(--warn-ink);border-radius:8px;font-size:13px}
-.tablebox{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.tablebox{position:relative;overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;font-size:13px}
 .tt th,.tt td{border:1px solid var(--line);padding:0;text-align:center;vertical-align:middle}
 .tt thead th{background:var(--bg);font-weight:600;padding:6px 0;position:sticky;top:0;z-index:1}
@@ -100,22 +100,24 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
 .tt td.slot{cursor:pointer;position:relative}
 .tt tr td.join-down{border-bottom-color:var(--c-study)}
 .tt tr td.join-up{border-top-color:var(--c-study)}
+.tt td.slot.st-done{background:var(--c-done);color:var(--c-st-ink)}
+.tt td.slot.st-fail{background:var(--c-fail);color:var(--c-st-ink)}
+.tt tr td.st-done.join-down{border-bottom-color:var(--c-done)} .tt tr td.st-done.join-up{border-top-color:var(--c-done)}
+.tt tr td.st-fail.join-down{border-bottom-color:var(--c-fail)} .tt tr td.st-fail.join-up{border-top-color:var(--c-fail)}
 .tt td.slot:hover,.tt td.slot:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-.tt td.slot:hover::after,.tt td.slot:focus-visible::after{content:"빼기";position:absolute;right:4px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:600;color:var(--accent)}
 .tt td.excl{cursor:pointer;position:relative}
 .tt td.excl:hover,.tt td.excl:focus-visible{outline:2px dashed var(--line-strong);outline-offset:-3px}
 .tt td.excl:hover::after,.tt td.excl:focus-visible::after{content:"되돌리기";font-size:11px;color:var(--muted)}
 .tip{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px;color:var(--muted);margin-bottom:10px}
 .tip .sw{display:inline-block;vertical-align:-2px;margin-right:4px}
 /* 순공: 드래그, O/X */
-.tt td.slot{touch-action:none;user-select:none;-webkit-user-select:none;padding-left:26px}
+.tt td.slot{touch-action:none;user-select:none;-webkit-user-select:none}
 .tt td.slot.dragging{opacity:.35}
 .tt td.drop-ok{outline:2px solid var(--accent);outline-offset:-2px;background:var(--accent-soft)}
-.mk{position:absolute;left:4px;top:50%;transform:translateY(-50%);width:18px;height:18px;border-radius:4px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font:600 11px/1 var(--mono);padding:0;cursor:pointer;display:grid;place-items:center;z-index:1}
-.mk:hover{border-color:var(--ink)}
-.mk:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-.mk.mk-o{background:var(--ok);border-color:var(--ok);color:var(--ok-ink)}
-.mk.mk-x{background:var(--danger);border-color:var(--danger);color:var(--surface)}
+.nowline{position:absolute;height:0;border-top:2px solid var(--now);pointer-events:none;z-index:2}
+.nowline::before{content:"";position:absolute;left:-5px;top:-6px;width:10px;height:10px;border-radius:50%;background:var(--now)}
+.nowtag{position:absolute;pointer-events:none;z-index:2;font:500 11px/1 var(--mono);color:var(--surface);background:var(--now);border-radius:4px;padding:3px 5px;transform:translateY(-50%)}
+.dnum.fail{color:var(--c-fail)}
 .drag-ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:30;background:var(--c-study);color:var(--c-ink);border:2px solid var(--accent);border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
 /* 상단 순공 현황 */
 .dash{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:22px;display:grid;gap:12px}
@@ -143,7 +145,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <header class="top">
       <div>
         <h1>주간 시간표 플래너</h1>
-        <p class="lede">여섯 가지 일정을 입력하면 월–일, 30분 단위 주간 시간표를 만들어요. 순공 시간은 빈 시간에 자동 배치되고, 시간표에서 직접 옮기거나 O/X로 실제 공부 여부를 표시할 수 있어요.</p>
+        <p class="lede">여섯 가지 일정을 입력하면 월–일, 30분 단위 주간 시간표를 만들어요. 순공 시간은 빈 시간에 자동 배치되고, 시간표에서 직접 옮기거나 눌러서 완료를 표시할 수 있어요.</p>
       </div>
     </header>
     <div class="notice" id="sample-notice" hidden>
@@ -166,7 +168,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <div class="summary" id="summary"></div>
     <div class="legend" id="legend"></div>
     <ul class="warns" id="warns" hidden></ul>
-    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸은 끌어서 빈칸(식사 시간 포함)으로 옮기고, 누르면 30분씩 빠져요. 칸 왼쪽 네모를 누르면 O → X → 비움 순으로 공부 여부를 표시해요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>자동 배치로 되돌리기</button></div>
+    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸을 누르면 초록색(완료)이 되고, 다시 누르면 취소돼요. 빨간 선(지금 시각)이 지나도록 완료하지 않은 칸은 빨간색(실패)이 돼요. 칸을 끌어서 빈칸(식사 시간 포함)으로 옮길 수 있고, 실패 칸을 미래로 옮기면 다시 계획(노란색)이 돼요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>자동 배치로 되돌리기</button></div>
     <div class="tablebox"><table class="tt" id="tt"></table></div>
   </section>
 </div>
@@ -396,8 +398,19 @@ function build(){
 function addWarn(arr,t){ if(!arr.includes(t)) arr.push(t); }
 
 /* ---------- 결과 화면 ---------- */
+/* 지금 시각 (이번 주 월요일 0시 기준 분) */
+function nowAbs(){ const n=new Date(); return ((n.getDay()+6)%7)*1440+n.getHours()*60+n.getMinutes(); }
+function slotStatus(d,m,marks,now){
+  if(marks[d+'-'+m]==='o') return 'done';
+  if(d*1440+m+30<=now) return 'fail';
+  return 'plan';
+}
+let lastRes=null;
+
 function renderResult(res){
+  lastRes=res;
   const {grid,gStart,N,warns,placed}=res;
+  const now=nowAbs();
   // 합계
   const tot={class:0,fixed:0,special:0,free:0,study:0};
   grid.forEach(col=>col.forEach(c=>{ if(c&&tot[c.cat]!==undefined) tot[c.cat]+=0.5; }));
@@ -407,36 +420,45 @@ function renderResult(res){
     `<span class="stat">고정 <b>${tot.fixed}</b>시간</span>`+
     `<span class="stat">약속 <b>${tot.special}</b>시간</span>`+
     `<span class="stat">자유 <b>${tot.free}</b>시간</span>`;
-  $('legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<span><i class="sw" style="background:var(${v.color})"></i>${v.label}</span>`).join('');
+  $('legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<span><i class="sw" style="background:var(${v.color})"></i>${v.label}</span>`).join('')+
+    `<span><i class="sw" style="background:var(--c-done)"></i>순공 완료</span><span><i class="sw" style="background:var(--c-fail)"></i>순공 실패</span>`;
   const w=$('warns'); w.hidden=!warns.length; w.innerHTML=warns.map(t=>`<li>${esc(t)}</li>`).join('');
   const changed=(state.excluded||[]).length+(state.pinned||[]).length;
   $('btn-reset-ex').hidden=!changed;
 
-  // 상단 현황: 계획 대비 실제 순공 (O 표시한 칸)
+  // 순공 칸 상태 계산
   const marks=state.marks||{};
-  let o=0,x=0;
+  const st=[...Array(7)].map(()=>Array(N).fill(null));
+  let done=0,fail=0,left=0;
   for(let d=0;d<7;d++) for(let r=0;r<N;r++){
     const c=grid[d][r]; if(!c||c.cat!=='study') continue;
-    const v=marks[d+'-'+(gStart+r*30)]; if(v==='o') o++; else if(v==='x') x++;
+    const v=slotStatus(d,gStart+r*30,marks,now); st[d][r]=v;
+    if(v==='done') done++; else if(v==='fail') fail++; else left++;
   }
-  const plan=placed/2, real=o/2, rest=placed-o-x;
+  // 상단 현황
+  const plan=placed/2, real=done/2;
   const pct=plan?Math.round(real/plan*100):0;
-  const wo=placed?o/placed*100:0, wx=placed?x/placed*100:0;
+  const wd=placed?done/placed*100:0, wf=placed?fail/placed*100:0;
+  const n=new Date();
   $('dash').innerHTML=`
     <div class="dash-top">
       <div>
         <div class="dash-label">실제 순공 / 계획</div>
         <div class="dash-big"><span class="dnum">${real}</span><span class="dunit">시간</span><span class="dplan">/ ${plan}</span><span class="dunit">시간</span></div>
       </div>
+      <div>
+        <div class="dash-label">실패</div>
+        <div class="dash-big"><span class="dnum fail">${fail/2}</span><span class="dunit">시간</span></div>
+      </div>
       <div style="text-align:right">
         <div class="dash-label">달성률</div>
         <div class="dpct">${pct}%</div>
       </div>
     </div>
-    <div class="bar" role="img" aria-label="계획 ${plan}시간 중 실제 ${real}시간"><i class="o" style="width:${wo}%"></i><i class="x" style="width:${wx}%"></i></div>
-    <div class="dash-sub"><span>O 공부함 <b>${o/2}시간</b></span><span>X 못 함 <b>${x/2}시간</b></span><span>아직 표시 안 함 <b>${rest/2}시간</b></span><span>주간 목표 <b>${state.goal}시간</b></span></div>`;
+    <div class="bar" role="img" aria-label="계획 ${plan}시간 중 완료 ${real}시간, 실패 ${fail/2}시간"><i class="o" style="width:${wd}%"></i><i class="x" style="width:${wf}%"></i></div>
+    <div class="dash-sub"><span>지금 <b>${DAYS[(n.getDay()+6)%7]} ${fmt(n.getHours()*60+n.getMinutes())}</b></span><span>완료 <b>${real}시간</b></span><span>실패 <b>${fail/2}시간</b></span><span>남은 계획 <b>${left/2}시간</b></span><span>주간 목표 <b>${state.goal}시간</b></span></div>`;
 
-  // 블록(연속 칸 합치기). 순공은 30분씩 따로 다뤄야 하므로 칸을 나눠 두고 테두리만 이어 보이게 함
+  // 블록(연속 칸 합치기). 순공은 30분씩 따로 다뤄야 하므로 칸을 나눠 두고, 같은 상태끼리 테두리를 이어 보이게 함
   const span=[...Array(7)].map(()=>Array(N).fill(0)); // >0: 블록 시작 rowspan, -1: 가려짐, 0: 빈칸
   const run=[...Array(7)].map(()=>Array(N).fill(null));
   for(let d=0;d<7;d++){
@@ -444,15 +466,19 @@ function renderResult(res){
     while(r<N){
       const c=grid[d][r];
       if(!c||c.cat==='excl'){ r++; continue; }
-      let k=r+1; while(k<N&&grid[d][k]&&grid[d][k].cat===c.cat&&grid[d][k].name===c.name) k++;
+      let k=r+1;
       if(c.cat==='study'){
+        while(k<N&&grid[d][k]&&grid[d][k].cat==='study'&&st[d][k]===st[d][r]) k++;
         for(let j=r;j<k;j++){ span[d][j]=1; run[d][j]={i:j-r,len:k-r,a:gStart+r*30,b:gStart+k*30}; }
       } else {
+        while(k<N&&grid[d][k]&&grid[d][k].cat===c.cat&&grid[d][k].name===c.name) k++;
         span[d][r]=k-r; for(let j=r+1;j<k;j++) span[d][j]=-1;
       }
       r=k;
     }
   }
+  const LBL={plan:'순공',done:'✓ 완료',fail:'✕ 실패'};
+  const TIP={plan:'누르면 완료, 끌어서 옮기기',done:'누르면 완료 취소, 끌어서 옮기기',fail:'공부했다면 눌러서 완료, 미래 시간으로 끌면 다시 계획'};
   let h='<colgroup><col style="width:64px">'+DAYS.map(()=>'<col>').join('')+'</colgroup>';
   h+='<thead><tr><th></th>'+DAYS.map((d,i)=>`<th class="${i>=5?'we':''}">${d}</th>`).join('')+'</tr></thead><tbody>';
   for(let r=0;r<N;r++){
@@ -464,15 +490,14 @@ function renderResult(res){
       if(c&&c.cat==='excl'){ h+=`<td class="excl" data-d="${d}" data-m="${m}" tabindex="0" role="button" title="${DAYS[d]} ${fmt(m)} 순공 되돌리기"></td>`; continue; }
       if(sp===0){ h+=`<td class="empty" data-d="${d}" data-m="${m}"></td>`; continue; }
       if(c.cat==='study'){
-        const R=run[d][r], key=d+'-'+m, v=marks[key];
-        const cls=['blk','cat-study','slot'];
+        const R=run[d][r], s=st[d][r];
+        const cls=['blk','cat-study','slot','st-'+s];
         if(R.i>0) cls.push('join-up');
         if(R.i<R.len-1) cls.push('join-down');
         let inner='';
-        if(R.i===0) inner=`<span class="n">순공</span>`;
+        if(R.i===0) inner=`<span class="n">${LBL[s]}</span>`;
         else if(R.i===1) inner=`<span class="t">${fmt(R.a)}–${fmt(R.b)}</span>`;
-        const mk=`<button type="button" class="mk${v?' mk-'+v:''}" data-k="${key}" aria-label="${DAYS[d]} ${fmt(m)} 공부 여부: ${v==='o'?'O':v==='x'?'X':'표시 안 함'}">${v==='o'?'O':v==='x'?'X':''}</button>`;
-        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" tabindex="0" role="button" title="${DAYS[d]} ${fmt(m)}–${fmt(m+30)} 순공 · 끌어서 옮기기, 눌러서 빼기">${mk}${inner}</td>`;
+        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" tabindex="0" role="button" aria-pressed="${s==='done'}" title="${DAYS[d]} ${fmt(m)}–${fmt(m+30)} · ${TIP[s]}">${inner}</td>`;
         continue;
       }
       const a=m, b=m+sp*30;
@@ -482,7 +507,38 @@ function renderResult(res){
     h+='</tr>';
   }
   $('tt').innerHTML=h+'</tbody>';
+  placeNowLine();
 }
+
+/* 현재 시각 빨간 선 */
+function placeNowLine(){
+  const box=document.querySelector('.tablebox');
+  box.querySelectorAll('.nowline,.nowtag').forEach(e=>e.remove());
+  if(!lastRes||$('page-result').hidden) return;
+  const {gStart,N}=lastRes;
+  let now=nowAbs(), d=Math.floor(now/1440), m=now%1440;
+  // 자정을 넘긴 시간대가 표에 있으면 전날 칸의 아래쪽에 표시
+  if(m<gStart&&d>0&&m+1440<gStart+N*30){ d-=1; m+=1440; }
+  if(m<gStart||m>=gStart+N*30) return;
+  const rows=$('tt').tBodies[0].rows, r=Math.floor((m-gStart)/30), frac=((m-gStart)%30)/30;
+  const tr=rows[r], th=$('tt').tHead.rows[0].cells[d+1], tc=$('tt').tHead.rows[0].cells[0];
+  if(!tr||!th) return;
+  const top=$('tt').offsetTop+tr.offsetTop+tr.offsetHeight*frac;
+  const line=document.createElement('div'); line.className='nowline';
+  line.style.cssText=`top:${top}px;left:${th.offsetLeft}px;width:${th.offsetWidth}px`;
+  const tag=document.createElement('div'); tag.className='nowtag';
+  tag.style.cssText=`top:${top}px;left:${tc.offsetLeft+4}px`;
+  tag.textContent=fmt(m);
+  box.appendChild(line); box.appendChild(tag);
+}
+let lastTick=Math.floor(nowAbs()/30);
+setInterval(()=>{
+  if($('page-result').hidden||drag) return;
+  const t=Math.floor(nowAbs()/30);
+  if(t!==lastTick){ lastTick=t; rerender(); } // 30분 경계를 지나면 실패 칸을 다시 계산
+  else placeNowLine();
+},30000);
+window.addEventListener('resize',()=>placeNowLine());
 
 /* 화면 위치를 유지한 채 다시 그리기 */
 function rerender(focusSel){
@@ -495,35 +551,30 @@ const arr=k=>(state[k]=state[k]||[]);
 const del=(k,v)=>{ const a=arr(k), i=a.indexOf(v); if(i>=0) a.splice(i,1); };
 const add=(k,v)=>{ const a=arr(k); if(!a.includes(v)) a.push(v); };
 
-/* 순공 칸 빼기 / 되돌리기 */
+/* 순공 칸 누르기: 완료 ↔ 해제 / 뺀 칸 되돌리기 */
 function toggleSlot(td){
   const key=td.dataset.d+'-'+td.dataset.m;
-  if(td.classList.contains('slot')){ del('pinned',key); add('excluded',key); if(state.marks) delete state.marks[key]; }
+  state.marks=state.marks||{};
+  if(td.classList.contains('slot')){ if(state.marks[key]==='o') delete state.marks[key]; else state.marks[key]='o'; }
   else if(td.classList.contains('excl')) del('excluded',key);
   else return;
   save();
   rerender(`#tt td[data-d="${td.dataset.d}"][data-m="${td.dataset.m}"]`);
 }
-/* O → X → 비움 */
-function cycleMark(btn){
-  const k=btn.dataset.k; state.marks=state.marks||{};
-  const v=state.marks[k]; const nv=v==='o'?'x':v==='x'?'':'o';
-  if(nv) state.marks[k]=nv; else delete state.marks[k];
-  save(); rerender(`.mk[data-k="${k}"]`);
-}
-/* 순공 칸 옮기기 */
+/* 순공 칸 옮기기 (완료 표시는 따라감, 실패 칸은 미래로 옮기면 다시 계획이 됨) */
 function moveSlot(src,dst){
   const ks=src.dataset.d+'-'+src.dataset.m, kd=dst.dataset.d+'-'+dst.dataset.m;
   if(arr('pinned').includes(ks)) del('pinned',ks); else add('excluded',ks);
   del('excluded',kd); add('pinned',kd);
   state.marks=state.marks||{};
-  if(state.marks[ks]){ state.marks[kd]=state.marks[ks]; delete state.marks[ks]; }
+  if(state.marks[ks]){ state.marks[kd]=state.marks[ks]; }
+  delete state.marks[ks];
   save(); rerender();
 }
 
 let drag=null, suppressClick=false;
 $('tt').addEventListener('pointerdown',e=>{
-  if(e.button!==0||e.target.closest('.mk')) return;
+  if(e.button!==0) return;
   const td=e.target.closest('td.slot'); if(!td) return;
   drag={src:td,x:e.clientX,y:e.clientY,on:false,ghost:null,target:null,id:e.pointerId};
 });
@@ -533,7 +584,6 @@ window.addEventListener('pointermove',e=>{
     if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<6) return;
     drag.on=true; drag.src.classList.add('dragging');
     const g=document.createElement('div'); g.className='drag-ghost';
-    g.textContent=`순공 30분 · ${DAYS[+drag.src.dataset.d]} ${fmt(+drag.src.dataset.m)}`;
     document.body.appendChild(g); drag.ghost=g;
   }
   e.preventDefault();
@@ -541,9 +591,7 @@ window.addEventListener('pointermove',e=>{
   const el=document.elementFromPoint(e.clientX,e.clientY);
   const t=el&&el.closest?el.closest('#tt td.empty,#tt td.excl'):null;
   if(t!==drag.target){ drag.target&&drag.target.classList.remove('drop-ok'); drag.target=t; t&&t.classList.add('drop-ok'); }
-  if(t) drag.ghost.textContent=`→ ${DAYS[+t.dataset.d]} ${fmt(+t.dataset.m)}`;
-  else drag.ghost.textContent=`순공 30분 · ${DAYS[+drag.src.dataset.d]} ${fmt(+drag.src.dataset.m)}`;
-  // 화면 가장자리에서 자동 스크롤
+  drag.ghost.textContent=t?`→ ${DAYS[+t.dataset.d]} ${fmt(+t.dataset.m)}`:`순공 30분 · ${DAYS[+drag.src.dataset.d]} ${fmt(+drag.src.dataset.m)}`;
   if(e.clientY<60) window.scrollBy(0,-14); else if(e.clientY>window.innerHeight-60) window.scrollBy(0,14);
 },{passive:false});
 function endDrag(e,cancel){
@@ -559,12 +607,10 @@ window.addEventListener('pointercancel',e=>endDrag(e,true));
 
 $('tt').addEventListener('click',e=>{
   if(suppressClick) return;
-  const b=e.target.closest('.mk'); if(b){ e.stopPropagation(); cycleMark(b); return; }
   const td=e.target.closest('td.slot,td.excl'); if(td) toggleSlot(td);
 });
 $('tt').addEventListener('keydown',e=>{
   if(e.key!=='Enter'&&e.key!==' ') return;
-  if(e.target.closest('.mk')) return; // 버튼 기본 동작 사용
   const td=e.target.closest('td.slot,td.excl'); if(td){ e.preventDefault(); toggleSlot(td); }
 });
 $('btn-reset-ex').onclick=()=>{ state.excluded=[]; state.pinned=[]; save(); rerender(); };
@@ -575,6 +621,7 @@ function show(page){
   $('page-result').hidden=page!=='result';
   $('actionbar').hidden=page!=='input';
   window.scrollTo(0,0);
+  if(page==='result') placeNowLine();
 }
 $('btn-build').onclick=()=>{
   if(!validate()){ $('bar-hint').textContent='빨간 표시된 항목을 확인해 주세요.'; const e=document.querySelector('.row.err'); e&&e.scrollIntoView({block:'center'}); return; }
