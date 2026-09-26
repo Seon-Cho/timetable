@@ -105,6 +105,16 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
 .tt tr td.st-done.join-down{border-bottom-color:var(--c-done)} .tt tr td.st-done.join-up{border-top-color:var(--c-done)}
 .tt tr td.st-fail.join-down{border-bottom-color:var(--c-fail)} .tt tr td.st-fail.join-up{border-top-color:var(--c-fail)}
 .tt td.slot:hover,.tt td.slot:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tt td.fslot{cursor:grab;position:relative;touch-action:none;user-select:none;-webkit-user-select:none}
+.tt tr td.fslot.join-down{border-bottom-color:var(--c-free)} .tt tr td.fslot.join-up{border-top-color:var(--c-free)}
+.tt td.fslot:hover{outline:2px solid var(--accent);outline-offset:-2px}
+.tt td.fslot.dragging{opacity:.35}
+.row-tools{display:flex;gap:2px;align-items:flex-start}
+.tool{font:inherit;font-size:12px;width:30px;height:30px;border-radius:6px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;padding:0}
+.tool:hover:not(:disabled){border-color:var(--line-strong);color:var(--ink)}
+.tool:disabled{opacity:.3;cursor:default}
+.tool:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tool.del:hover{color:var(--danger);border-color:var(--danger)}
 .tt td.excl{cursor:pointer;position:relative}
 .tt td.excl:hover,.tt td.excl:focus-visible{outline:2px dashed var(--line-strong);outline-offset:-3px}
 .tt td.excl:hover::after,.tt td.excl:focus-visible::after{content:"되돌리기";font-size:11px;color:var(--muted)}
@@ -145,7 +155,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <header class="top">
       <div>
         <h1>주간 시간표 플래너</h1>
-        <p class="lede">여섯 가지 일정을 입력하면 월–일, 30분 단위 주간 시간표를 만들어요. 순공 시간은 빈 시간에 자동 배치되고, 시간표에서 직접 옮기거나 눌러서 완료를 표시할 수 있어요.</p>
+        <p class="lede">순공 목표, 기상·취침, 특별 일정, 자유시간, 수업, 고정 일정을 입력하면 월–일, 30분 단위 주간 시간표를 만들어요. 순공 시간은 빈 시간에 자동 배치되고, 시간표에서 직접 옮기거나 눌러서 완료를 표시할 수 있어요.</p>
       </div>
     </header>
     <div class="notice" id="sample-notice" hidden>
@@ -168,7 +178,7 @@ table.tt{border-collapse:collapse;width:100%;min-width:720px;table-layout:fixed;
     <div class="summary" id="summary"></div>
     <div class="legend" id="legend"></div>
     <ul class="warns" id="warns" hidden></ul>
-    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸을 누르면 초록색(완료)이 되고, 다시 누르면 취소돼요. 빨간 선(지금 시각)이 지나도록 완료하지 않은 칸은 빨간색(실패)이 돼요. 칸을 끌어서 빈칸(식사 시간 포함)으로 옮길 수 있고, 실패 칸을 미래로 옮기면 다시 계획(노란색)이 돼요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>자동 배치로 되돌리기</button></div>
+    <div class="tip"><span><i class="sw" style="background:var(--c-study)"></i>순공 칸을 누르면 초록색(완료)이 되고, 다시 누르면 취소돼요. 빨간 선(지금 시각)이 지나도록 완료하지 않은 칸은 빨간색(실패)이 돼요. 순공과 자유시간 칸은 끌어서 빈칸(식사 시간 포함)으로 옮길 수 있고, 실패 칸을 미래로 옮기면 다시 계획(노란색)이 돼요.</span><button class="btn ghost" id="btn-reset-ex" type="button" hidden>옮긴 칸 모두 되돌리기</button></div>
     <div class="tablebox"><table class="tt" id="tt"></table></div>
   </section>
 </div>
@@ -233,47 +243,49 @@ const floor30=m=>Math.floor(m/30)*30, ceil30=m=>Math.ceil(m/30)*30;
 
 /* ---------- 입력 화면 ---------- */
 const LISTS=[
-  {key:'classes',cat:'class',n:1,title:'수업',desc:'과목명과 요일, 수업 시작·종료 시간',ph:'과목명 (예: 도시계획론)',addLabel:'수업 추가'},
-  {key:'fixed',cat:'fixed',n:2,title:'고정 일정',desc:'매주 반복되는 일정 (운동, 통학, 출퇴근 등)',ph:'일정 이름 (예: 운동)',addLabel:'고정 일정 추가'},
   {key:'special',cat:'special',n:3,title:'이번 주 특별 일정',desc:'이번 주에만 있는 약속 (병원, 식사 약속 등)',ph:'약속 이름 (예: 병원)',addLabel:'약속 추가'},
-  {key:'free',cat:'free',n:4,title:'자유시간',desc:'쉬고 싶은 요일과 시간대. 순공이 배치되지 않아요.',ph:'이름 (기본: 자유시간)',addLabel:'자유시간 추가'}
+  {key:'free',cat:'free',n:4,title:'자유시간',desc:'쉬고 싶은 요일과 시간대. 순공이 배치되지 않고, 시간표에서 끌어서 옮길 수 있어요.',ph:'이름 (기본: 자유시간)',addLabel:'자유시간 추가'},
+  {key:'classes',cat:'class',n:5,title:'수업',desc:'과목명과 요일, 수업 시작·종료 시간',ph:'과목명 (예: 도시계획론)',addLabel:'수업 추가'},
+  {key:'fixed',cat:'fixed',n:6,title:'고정 일정',desc:'매주 반복되는 일정 (운동, 통학, 출퇴근 등)',ph:'일정 이름 (예: 운동)',addLabel:'고정 일정 추가'}
 ];
 
-function renderInput(){
+function renderInput(focusSel){
   const box=$('sections'); box.innerHTML='';
-  LISTS.forEach(L=>{
-    const sec=document.createElement('div'); sec.className='sec';
-    sec.innerHTML=`<div class="sec-head"><span class="num" style="background:var(${CATS[L.cat].color})">${L.n}</span><div><h2>${L.title}</h2><p>${L.desc}</p></div></div><div class="rows"></div><button class="btn add" type="button">+ ${L.addLabel}</button>`;
-    const rows=sec.querySelector('.rows');
-    state[L.key].forEach((it,i)=>rows.appendChild(rowEl(L,it,i)));
-    sec.querySelector('.add').onclick=()=>{ state[L.key].push({name:'',days:[],start:'',end:''}); save(); renderInput(); const ins=box.querySelectorAll(`[data-list="${L.key}"] input[type=text]`); ins[ins.length-1]?.focus(); };
-    box.appendChild(sec);
-  });
-  // 5. 기상/취침
-  const s5=document.createElement('div'); s5.className='sec';
-  s5.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-sleep)">5</span><div><h2>기상·취침 시간</h2><p>주중(월–금)과 주말(토–일)을 따로 정해요. 자정을 넘기면 00:30처럼 입력하세요.</p></div></div>
+  // 1. 순공 목표
+  const s1=document.createElement('div'); s1.className='sec';
+  s1.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-study)">1</span><div><h2>주간 순공 목표</h2><p>비어 있는 깨어 있는 시간에 자동 배치해요. 주중·낮(9–18시)을 먼저 채우고, 요일마다 고르게 나눠요.</p></div></div>
+  <label class="field">한 주 목표 (시간)<input type="number" id="goal" min="0" max="120" step="0.5" value="${state.goal}"></label>
+  <label class="check"><input type="checkbox" id="keepMeals" ${state.keepMeals?'checked':''}> 식사 시간(12:00–13:00, 18:00–19:00)은 비워두기</label>`;
+  box.appendChild(s1);
+  $('goal').oninput=e=>{ state.goal=parseFloat(e.target.value)||0; save(); };
+  $('keepMeals').onchange=e=>{ state.keepMeals=e.target.checked; save(); };
+  // 2. 기상/취침
+  const s2=document.createElement('div'); s2.className='sec';
+  s2.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-sleep)">2</span><div><h2>기상·취침 시간</h2><p>주중(월–금)과 주말(토–일)을 따로 정해요. 자정을 넘기면 00:30처럼 입력하세요.</p></div></div>
   <div class="grid2">
     <label class="field">주중 기상<input type="time" step="1800" id="wdWake" value="${state.sleep.wdWake}"></label>
     <label class="field">주중 취침<input type="time" step="1800" id="wdBed" value="${state.sleep.wdBed}"></label>
     <label class="field">주말 기상<input type="time" step="1800" id="weWake" value="${state.sleep.weWake}"></label>
     <label class="field">주말 취침<input type="time" step="1800" id="weBed" value="${state.sleep.weBed}"></label>
   </div>`;
-  box.appendChild(s5);
+  box.appendChild(s2);
   ['wdWake','wdBed','weWake','weBed'].forEach(k=>{ $(k).oninput=e=>{ state.sleep[k]=e.target.value; save(); }; });
-  // 6. 순공 목표
-  const s6=document.createElement('div'); s6.className='sec';
-  s6.innerHTML=`<div class="sec-head"><span class="num" style="background:var(--c-study)">6</span><div><h2>주간 순공 목표</h2><p>비어 있는 깨어 있는 시간에 자동 배치해요. 주중·낮(9–18시)을 먼저 채우고, 요일마다 고르게 나눠요.</p></div></div>
-  <label class="field">한 주 목표 (시간)<input type="number" id="goal" min="0" max="120" step="0.5" value="${state.goal}"></label>
-  <label class="check"><input type="checkbox" id="keepMeals" ${state.keepMeals?'checked':''}> 식사 시간(12:00–13:00, 18:00–19:00)은 비워두기</label>`;
-  box.appendChild(s6);
-  $('goal').oninput=e=>{ state.goal=parseFloat(e.target.value)||0; save(); };
-  $('keepMeals').onchange=e=>{ state.keepMeals=e.target.checked; save(); };
+  // 3~6. 목록형 일정
+  LISTS.forEach(L=>{
+    const sec=document.createElement('div'); sec.className='sec';
+    sec.innerHTML=`<div class="sec-head"><span class="num" style="background:var(${CATS[L.cat].color})">${L.n}</span><div><h2>${L.title}</h2><p>${L.desc}</p></div></div><div class="rows"></div><button class="btn add" type="button">+ ${L.addLabel}</button>`;
+    const rows=sec.querySelector('.rows');
+    state[L.key].forEach((it,i)=>rows.appendChild(rowEl(L,it,i)));
+    sec.querySelector('.add').onclick=()=>{ state[L.key].push({name:'',days:[],start:'',end:''}); save(); renderInput(`#${L.key}-${state[L.key].length-1}-name`); };
+    box.appendChild(sec);
+  });
   $('sample-notice').hidden=!isSample;
+  if(focusSel){ const el=document.querySelector(focusSel); el&&el.focus(); }
 }
 
 function rowEl(L,it,i){
   const r=document.createElement('div'); r.className='row'; r.dataset.list=L.key; r.dataset.i=i;
-  const id=`${L.key}-${i}`;
+  const id=`${L.key}-${i}`, last=state[L.key].length-1;
   r.innerHTML=`<div class="row-main">
     <input type="text" id="${id}-name" placeholder="${L.ph}" value="${esc(it.name||'')}" aria-label="이름">
     <div class="chips" role="group" aria-label="요일">${DAYS.map((d,di)=>`<button type="button" class="chip" id="${id}-d${di}" aria-pressed="${it.days.includes(di)}">${d}</button>`).join('')}</div>
@@ -281,7 +293,11 @@ function rowEl(L,it,i){
     <span class="tilde">~</span>
     <input type="time" step="1800" id="${id}-end" value="${it.end||''}" aria-label="종료 시간">
   </div>
-  <button type="button" class="btn ghost" aria-label="삭제" title="삭제">✕</button>`;
+  <div class="row-tools">
+    <button type="button" class="tool" id="${id}-up" aria-label="위로" title="위로" ${i===0?'disabled':''}>▲</button>
+    <button type="button" class="tool" id="${id}-down" aria-label="아래로" title="아래로" ${i===last?'disabled':''}>▼</button>
+    <button type="button" class="tool del" id="${id}-del" aria-label="삭제" title="삭제">✕</button>
+  </div>`;
   r.querySelector(`#${id}-name`).oninput=e=>{ it.name=e.target.value; save(); };
   r.querySelector(`#${id}-start`).oninput=e=>{ it.start=e.target.value; save(); };
   r.querySelector(`#${id}-end`).oninput=e=>{ it.end=e.target.value; save(); };
@@ -289,7 +305,15 @@ function rowEl(L,it,i){
     const k=it.days.indexOf(di); if(k>=0) it.days.splice(k,1); else it.days.push(di);
     it.days.sort(); c.setAttribute('aria-pressed',it.days.includes(di)); save();
   });
-  r.querySelector('.btn.ghost').onclick=()=>{ state[L.key].splice(i,1); save(); renderInput(); };
+  const move=(dir)=>{
+    const a=state[L.key], j=i+dir; if(j<0||j>=a.length) return;
+    [a[i],a[j]]=[a[j],a[i]]; save();
+    renderInput(`#${L.key}-${j}-${dir<0?'up':'down'}`);
+    const f=document.activeElement; if(!f||f.disabled||f===document.body) document.querySelector(`#${L.key}-${j}-name`)?.focus();
+  };
+  r.querySelector(`#${id}-up`).onclick=()=>move(-1);
+  r.querySelector(`#${id}-down`).onclick=()=>move(1);
+  r.querySelector(`#${id}-del`).onclick=()=>{ state[L.key].splice(i,1); save(); renderInput(); };
   return r;
 }
 
@@ -346,8 +370,10 @@ function build(){
   // 취침
   for(let d=0;d<7;d++) for(let r=0;r<N;r++){ const m=gStart+r*30; if(m<wake[d]||m>=bed[d]) grid[d][r]={cat:'sleep',name:'취침',pri:9}; }
   // 일정 (우선순위 높은 것부터)
+  const fex=new Set(state.freeEx||[]);
   events.sort((x,y)=>x.pri-y.pri).forEach(e=>{
     for(let m=e.a;m<e.b;m+=30){
+      if(e.cat==='free'&&fex.has(e.day+'-'+m)) continue; // 다른 곳으로 옮긴 자유시간 칸
       const r=(m-gStart)/30, cur=grid[e.day][r];
       if(!cur||cur.cat==='sleep'){
         if(cur&&cur.cat==='sleep') addWarn(warns,`${DAYS[e.day]} ${e.name}: 취침 시간과 겹쳐요.`);
@@ -356,6 +382,13 @@ function build(){
         addWarn(warns,`${DAYS[e.day]} ${fmt(m)} 부근: ‘${e.name}’이(가) ‘${cur.name}’와 겹쳐서 ‘${cur.name}’을(를) 표시했어요.`);
       }
     }
+  });
+  // 옮겨 둔 자유시간 칸
+  Object.entries(state.freePins||{}).forEach(([k,name])=>{
+    const [d,m]=k.split('-').map(Number), r=(m-gStart)/30;
+    if(!(r>=0&&r<N&&Number.isInteger(r))) return;
+    if(!grid[d][r]) grid[d][r]={cat:'free',name,pri:3,pinned:true};
+    else if(!(grid[d][r].cat==='free'&&grid[d][r].name===name)) addWarn(warns,`${DAYS[d]} ${fmt(m)}에 옮겨 둔 ${name}이(가) ‘${grid[d][r].name}’과 겹쳐서 빠졌어요.`);
   });
   // 순공 자동 배치
   const goalSlots=Math.round((state.goal||0)*2);
@@ -423,7 +456,7 @@ function renderResult(res){
   $('legend').innerHTML=Object.entries(CATS).map(([k,v])=>`<span><i class="sw" style="background:var(${v.color})"></i>${v.label}</span>`).join('')+
     `<span><i class="sw" style="background:var(--c-done)"></i>순공 완료</span><span><i class="sw" style="background:var(--c-fail)"></i>순공 실패</span>`;
   const w=$('warns'); w.hidden=!warns.length; w.innerHTML=warns.map(t=>`<li>${esc(t)}</li>`).join('');
-  const changed=(state.excluded||[]).length+(state.pinned||[]).length;
+  const changed=(state.excluded||[]).length+(state.pinned||[]).length+(state.freeEx||[]).length+Object.keys(state.freePins||{}).length;
   $('btn-reset-ex').hidden=!changed;
 
   // 순공 칸 상태 계산
@@ -467,8 +500,9 @@ function renderResult(res){
       const c=grid[d][r];
       if(!c||c.cat==='excl'){ r++; continue; }
       let k=r+1;
-      if(c.cat==='study'){
-        while(k<N&&grid[d][k]&&grid[d][k].cat==='study'&&st[d][k]===st[d][r]) k++;
+      if(c.cat==='study'||c.cat==='free'){
+        if(c.cat==='study') while(k<N&&grid[d][k]&&grid[d][k].cat==='study'&&st[d][k]===st[d][r]) k++;
+        else while(k<N&&grid[d][k]&&grid[d][k].cat==='free'&&grid[d][k].name===c.name) k++;
         for(let j=r;j<k;j++){ span[d][j]=1; run[d][j]={i:j-r,len:k-r,a:gStart+r*30,b:gStart+k*30}; }
       } else {
         while(k<N&&grid[d][k]&&grid[d][k].cat===c.cat&&grid[d][k].name===c.name) k++;
@@ -498,6 +532,17 @@ function renderResult(res){
         if(R.i===0) inner=`<span class="n">${LBL[s]}</span>`;
         else if(R.i===1) inner=`<span class="t">${fmt(R.a)}–${fmt(R.b)}</span>`;
         h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" tabindex="0" role="button" aria-pressed="${s==='done'}" title="${DAYS[d]} ${fmt(m)}–${fmt(m+30)} · ${TIP[s]}">${inner}</td>`;
+        continue;
+      }
+      if(c.cat==='free'){
+        const R=run[d][r];
+        const cls=['blk','cat-free','fslot'];
+        if(R.i>0) cls.push('join-up');
+        if(R.i<R.len-1) cls.push('join-down');
+        let inner='';
+        if(R.i===0) inner=`<span class="n">${esc(c.name)}</span>`;
+        else if(R.i===1) inner=`<span class="t">${fmt(R.a)}–${fmt(R.b)}</span>`;
+        h+=`<td class="${cls.join(' ')}" data-d="${d}" data-m="${m}" data-n="${esc(c.name)}" title="${esc(c.name)} ${DAYS[d]} ${fmt(m)}–${fmt(m+30)} · 끌어서 옮기기">${inner}</td>`;
         continue;
       }
       const a=m, b=m+sp*30;
@@ -561,9 +606,17 @@ function toggleSlot(td){
   save();
   rerender(`#tt td[data-d="${td.dataset.d}"][data-m="${td.dataset.m}"]`);
 }
-/* 순공 칸 옮기기 (완료 표시는 따라감, 실패 칸은 미래로 옮기면 다시 계획이 됨) */
+/* 칸 옮기기: 순공(완료 표시는 따라감, 실패 칸은 미래로 옮기면 다시 계획이 됨)과 자유시간 */
 function moveSlot(src,dst){
   const ks=src.dataset.d+'-'+src.dataset.m, kd=dst.dataset.d+'-'+dst.dataset.m;
+  if(src.classList.contains('fslot')){
+    state.freePins=state.freePins||{};
+    const name=src.dataset.n||'자유시간';
+    if(state.freePins[ks]) delete state.freePins[ks]; else add('freeEx',ks);
+    add('excluded',ks); // 비운 자리는 빈칸으로 둠
+    del('excluded',kd); state.freePins[kd]=name;
+    save(); rerender(); return;
+  }
   if(arr('pinned').includes(ks)) del('pinned',ks); else add('excluded',ks);
   del('excluded',kd); add('pinned',kd);
   state.marks=state.marks||{};
@@ -575,7 +628,7 @@ function moveSlot(src,dst){
 let drag=null, suppressClick=false;
 $('tt').addEventListener('pointerdown',e=>{
   if(e.button!==0) return;
-  const td=e.target.closest('td.slot'); if(!td) return;
+  const td=e.target.closest('td.slot,td.fslot'); if(!td) return;
   drag={src:td,x:e.clientX,y:e.clientY,on:false,ghost:null,target:null,id:e.pointerId};
 });
 window.addEventListener('pointermove',e=>{
@@ -591,7 +644,7 @@ window.addEventListener('pointermove',e=>{
   const el=document.elementFromPoint(e.clientX,e.clientY);
   const t=el&&el.closest?el.closest('#tt td.empty,#tt td.excl'):null;
   if(t!==drag.target){ drag.target&&drag.target.classList.remove('drop-ok'); drag.target=t; t&&t.classList.add('drop-ok'); }
-  drag.ghost.textContent=t?`→ ${DAYS[+t.dataset.d]} ${fmt(+t.dataset.m)}`:`순공 30분 · ${DAYS[+drag.src.dataset.d]} ${fmt(+drag.src.dataset.m)}`;
+  drag.ghost.textContent=t?`→ ${DAYS[+t.dataset.d]} ${fmt(+t.dataset.m)}`:`${drag.src.dataset.n||'순공'} 30분 · ${DAYS[+drag.src.dataset.d]} ${fmt(+drag.src.dataset.m)}`;
   if(e.clientY<60) window.scrollBy(0,-14); else if(e.clientY>window.innerHeight-60) window.scrollBy(0,14);
 },{passive:false});
 function endDrag(e,cancel){
@@ -613,7 +666,7 @@ $('tt').addEventListener('keydown',e=>{
   if(e.key!=='Enter'&&e.key!==' ') return;
   const td=e.target.closest('td.slot,td.excl'); if(td){ e.preventDefault(); toggleSlot(td); }
 });
-$('btn-reset-ex').onclick=()=>{ state.excluded=[]; state.pinned=[]; save(); rerender(); };
+$('btn-reset-ex').onclick=()=>{ state.excluded=[]; state.pinned=[]; state.freeEx=[]; state.freePins={}; save(); rerender(); };
 
 /* ---------- 화면 전환 ---------- */
 function show(page){
